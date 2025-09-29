@@ -1,17 +1,24 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ROUTES } from "@/constants";
 
-export const signUp = async (email: string, password: string) => {
+export const signUp = async (email: string, password: string, metadata?: {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  company_name?: string;
+  btw_number?: string;
+}) => {
   const redirectUrl = `${window.location.origin}${ROUTES.HOME}`;
-  
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: redirectUrl
+      emailRedirectTo: redirectUrl,
+      data: metadata || {}
     }
   });
-  
+
   return { data, error };
 };
 

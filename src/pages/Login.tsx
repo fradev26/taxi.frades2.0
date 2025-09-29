@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Mail, Phone, User, Eye, EyeOff } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Car, Mail, Phone, User, Eye, EyeOff, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { signUp, signIn, signInWithGoogle, signInWithApple } from "@/lib/supabase";
@@ -18,9 +19,14 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [accountType, setAccountType] = useState<'personal' | 'business'>('personal');
+  const [companyName, setCompanyName] = useState("");
+  const [btwNumber, setBtwNumber] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
@@ -68,7 +74,17 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password);
+        const metadata = {
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
+          ...(accountType === 'business' && {
+            company_name: companyName,
+            btw_number: btwNumber
+          })
+        };
+
+        const { error } = await signUp(email, password, metadata);
         if (error) {
           toast({
             title: "Registratie mislukt",
@@ -263,6 +279,95 @@ export default function Login() {
                     </div>
                   </div>
                 </TabsContent>
+
+                {isSignUp && (
+                  <>
+                    {/* Account Type Selection */}
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium">Account type</Label>
+                      <RadioGroup
+                        value={accountType}
+                        onValueChange={(value: 'personal' | 'business') => setAccountType(value)}
+                        className="flex flex-col space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="personal" id="personal" />
+                          <Label htmlFor="personal" className="flex items-center gap-2 cursor-pointer">
+                            <User className="w-4 h-4" />
+                            Persoonlijk account
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="business" id="business" />
+                          <Label htmlFor="business" className="flex items-center gap-2 cursor-pointer">
+                            <Building className="w-4 h-4" />
+                            Zakelijk account
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Name Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">Voornaam</Label>
+                        <Input
+                          id="firstName"
+                          type="text"
+                          placeholder="Jan"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="h-12"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Achternaam</Label>
+                        <Input
+                          id="lastName"
+                          type="text"
+                          placeholder="de Vries"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="h-12"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Business Fields */}
+                    {accountType === 'business' && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <Building className="w-4 h-4" />
+                          Zakelijke gegevens
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="companyName">Bedrijfsnaam</Label>
+                            <Input
+                              id="companyName"
+                              type="text"
+                              placeholder="Uw bedrijfsnaam"
+                              value={companyName}
+                              onChange={(e) => setCompanyName(e.target.value)}
+                              className="h-12"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="btwNumber">BTW-nummer</Label>
+                            <Input
+                              id="btwNumber"
+                              type="text"
+                              placeholder="BE0123456789"
+                              value={btwNumber}
+                              onChange={(e) => setBtwNumber(e.target.value)}
+                              className="h-12"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Wachtwoord</Label>
