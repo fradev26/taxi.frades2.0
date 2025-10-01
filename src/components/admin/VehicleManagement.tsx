@@ -72,6 +72,27 @@ export function VehicleManagement() {
 
   useEffect(() => {
     loadVehicles();
+
+    // Subscribe to real-time vehicle updates
+    const subscription = adminAPI.realtime.subscribeToVehicles((payload) => {
+      console.log('Vehicle change detected:', payload);
+      
+      // Reload vehicles when changes are detected
+      loadVehicles();
+      
+      // Show notification for new vehicles
+      if (payload.eventType === 'INSERT') {
+        toast({
+          title: "Nieuw voertuig toegevoegd",
+          description: "Er is een nieuw voertuig aan de vloot toegevoegd.",
+        });
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      adminAPI.realtime.unsubscribe(subscription);
+    };
   }, []);
 
   // Reset form
@@ -137,16 +158,42 @@ export function VehicleManagement() {
         // Update existing vehicle
         await adminAPI.vehicles.updateVehicle(editingVehicle.id, vehicleData);
 
+        // Log the change
+        await adminAPI.audit.logAction(
+          'update_vehicle',
+          'vehicle',
+          editingVehicle.id,
+          {
+            name: editingVehicle.name,
+            type: editingVehicle.type,
+            capacity: editingVehicle.capacity,
+            hourly_rate: editingVehicle.hourly_rate,
+            per_km_rate: editingVehicle.per_km_rate,
+          },
+          vehicleData
+        );
+
         toast({
           title: "Voertuig bijgewerkt",
           description: `${formData.name} is succesvol bijgewerkt.`,
         });
       } else {
         // Create new vehicle
-        await adminAPI.vehicles.createVehicle({
+        const newVehicle = await adminAPI.vehicles.createVehicle({
           ...vehicleData,
           created_at: new Date().toISOString(),
         });
+
+        // Log the creation
+        if (newVehicle) {
+          await adminAPI.audit.logAction(
+            'create_vehicle',
+            'vehicle',
+            newVehicle.id,
+            null,
+            vehicleData
+          );
+        }
 
         toast({
           title: "Voertuig toegevoegd",
@@ -174,6 +221,19 @@ export function VehicleManagement() {
     try {
       await adminAPI.vehicles.deleteVehicle(vehicle.id);
 
+      // Log the deletion
+      await adminAPI.audit.logAction(
+        'delete_vehicle',
+        'vehicle',
+        vehicle.id,
+        {
+          name: vehicle.name,
+          type: vehicle.type,
+          capacity: vehicle.capacity,
+        },
+        null
+      );
+
       toast({
         title: "Voertuig verwijderd",
         description: `${vehicle.name || 'Het voertuig'} is succesvol verwijderd uit de vloot.`,
@@ -195,6 +255,15 @@ export function VehicleManagement() {
     try {
       const newAvailability = !(vehicle.available ?? false);
       await adminAPI.vehicles.toggleAvailability(vehicle.id, newAvailability);
+
+      // Log the availability change
+      await adminAPI.audit.logAction(
+        'toggle_availability',
+        'vehicle',
+        vehicle.id,
+        { available: vehicle.available },
+        { available: newAvailability }
+      );
 
       toast({
         title: "Status bijgewerkt",
