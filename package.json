@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:api": "./setup-api.sh",
+    "test:db": "npx tsx test-db.ts",
+    "validate:api": "npx tsx -e \"import { getConfigurationStatus } from './src/config/api-config'; console.log(getConfigurationStatus());\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

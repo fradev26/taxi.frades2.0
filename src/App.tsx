@@ -13,12 +13,15 @@ import Wallet from "./pages/Wallet";
 import Trips from "./pages/Trips";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
+import HourlyBooking from "./pages/HourlyBooking";
+import PricingTest from "./pages/PricingTest";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import TermsOfService from "./pages/TermsOfService";
 import SalesTerms from "./pages/SalesTerms";
 import LegalInfo from "./pages/LegalInfo";
 import SiteMap from "./pages/SiteMap";
+import GoogleMapsDebug from "./pages/GoogleMapsDebug";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,12 +42,15 @@ const App = () => (
                 <Route path={ROUTES.TRIPS} element={<Trips />} />
                 <Route path={ROUTES.ACCOUNT} element={<Account />} />
                 <Route path={ROUTES.ADMIN} element={<Admin />} />
+                <Route path={ROUTES.HOURLY_BOOKING} element={<HourlyBooking />} />
+                <Route path="/pricing-test" element={<PricingTest />} />
                 <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicy />} />
                 <Route path={ROUTES.COOKIE_POLICY} element={<CookiePolicy />} />
                 <Route path={ROUTES.TERMS_OF_SERVICE} element={<TermsOfService />} />
                 <Route path={ROUTES.SALES_TERMS} element={<SalesTerms />} />
                 <Route path={ROUTES.LEGAL_INFO} element={<LegalInfo />} />
                 <Route path={ROUTES.SITE_MAP} element={<SiteMap />} />
+                <Route path="/google-maps-debug" element={<GoogleMapsDebug />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

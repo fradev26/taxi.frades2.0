@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navigation } from "@/components/Navigation";
-import { Settings, Car, Euro, Users, CalendarCheck } from "lucide-react";
+import { Settings, Car, Euro, Users, CalendarCheck, Key } from "lucide-react";
 import { VehicleManagement } from "@/components/admin/VehicleManagement";
 import { PricingSettings } from "@/components/admin/PricingSettings";
 import { DriverManager } from "@/components/admin/DriverManager";
 import { BookingManager } from "@/components/admin/BookingManager";
+import { ApiManagementDashboard } from "@/components/admin/ApiManagementDashboard";
 
 export default function Admin() {
   const { isAdmin, isLoading } = useAuth();
@@ -48,7 +49,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="bookings" className="flex items-center gap-2">
               <CalendarCheck className="w-4 h-4" />
               Boekingen
@@ -64,6 +65,10 @@ export default function Admin() {
             <TabsTrigger value="drivers" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Chauffeurs
+            </TabsTrigger>
+            <TabsTrigger value="api" className="flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              API Configuratie
             </TabsTrigger>
           </TabsList>
 
@@ -81,6 +86,10 @@ export default function Admin() {
 
           <TabsContent value="drivers">
             <DriverManager />
+          </TabsContent>
+
+          <TabsContent value="api">
+            <ApiManagementDashboard />
           </TabsContent>
         </Tabs>
       </div>

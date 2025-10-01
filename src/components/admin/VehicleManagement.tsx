@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Car, Plus, CreditCard as Edit, Trash2, MapPin } from "lucide-react";
 import { typedSupabase } from "@/lib/supabase-typed";
 import { useToast } from "@/hooks/use-toast";
+import { STANDARD_VEHICLES } from "@/config/vehicles";
 
 interface Vehicle {
   id: string;
@@ -39,14 +40,11 @@ interface VehicleFormData {
   current_location: string;
 }
 
-const vehicleTypes = [
-  { value: "sedan", label: "Sedan" },
-  { value: "suv", label: "SUV" },
-  { value: "van", label: "Van" },
-  { value: "luxury", label: "Luxury" },
-  { value: "minibus", label: "Minibus" },
-  { value: "eco", label: "Eco" },
-];
+// Use standardized vehicle types from config
+const vehicleTypes = STANDARD_VEHICLES.map(vehicle => ({
+  value: vehicle.id,
+  label: vehicle.name
+}));
 
 export function VehicleManagement() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);

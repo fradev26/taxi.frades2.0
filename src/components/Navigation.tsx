@@ -14,9 +14,13 @@ export function Navigation() {
 
   // Header navigation items - only show Boeken and Login/Account
   const headerNavigationItems = user
-    ? [{ label: "Boeken", path: ROUTES.HOME, icon: Car }]
+    ? [
+        { label: "Boeken", path: ROUTES.HOME, icon: Car },
+        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock }
+      ]
     : [
         { label: "Boeken", path: ROUTES.HOME, icon: Car },
+        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock },
         { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
       ];
 
@@ -24,18 +28,27 @@ export function Navigation() {
   const mobileNavigationItems = user
     ? [
         { label: "Boeken", path: ROUTES.HOME, icon: Car },
+        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock },
         { label: "Wallet", path: ROUTES.WALLET, icon: Wallet },
-        { label: "Activiteit", path: ROUTES.TRIPS, icon: Clock },
         { label: "Account", path: ROUTES.ACCOUNT, icon: User },
         ...(isAdmin ? [{ label: "Admin", path: ROUTES.ADMIN, icon: Settings }] : [])
       ]
     : [
         { label: "Boeken", path: ROUTES.HOME, icon: Car },
+        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock },
         { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
       ];
 
   const isActive = (path: string) => {
-    if (path === ROUTES.HOME && location.pathname === ROUTES.HOME) return true;
+    // Handle tab-based navigation
+    if (path.includes('?tab=')) {
+      const [basePath, tabQuery] = path.split('?');
+      const currentTab = new URLSearchParams(location.search).get('tab');
+      const expectedTab = new URLSearchParams(tabQuery).get('tab');
+      return location.pathname === basePath && currentTab === expectedTab;
+    }
+    
+    if (path === ROUTES.HOME && location.pathname === ROUTES.HOME && !location.search.includes('tab=')) return true;
     if (path !== ROUTES.HOME && location.pathname.startsWith(path)) return true;
     return false;
   };

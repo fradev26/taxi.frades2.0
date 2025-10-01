@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Car, Mail, Phone, User, Eye, EyeOff, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { signUp, signIn, signInWithGoogle, signInWithApple } from "@/lib/supabase";
+import { typedSupabase } from "@/lib/supabase-typed";
 import { useAuth } from "@/hooks/useAuth";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import { ROUTES, APP_CONFIG } from "@/constants";
@@ -30,12 +31,73 @@ export default function Login() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  
+  // Check if this is a post-payment flow
+  const isPostPayment = searchParams.get('postPayment') === 'true';
+  const isGuestBooking = searchParams.get('guestBooking') === 'true';
+
+  // Auto-switch to sign-up mode for post-payment flow
+  useEffect(() => {
+    if (isPostPayment && isGuestBooking) {
+      setIsSignUp(true);
+    }
+  }, [isPostPayment, isGuestBooking]);
+
+  // Handle post-payment booking completion
+  const handlePostPaymentBooking = async () => {
+    try {
+      const pendingBookingData = localStorage.getItem('pendingGuestBooking');
+      if (!pendingBookingData || !user) return;
+
+      const bookingData = JSON.parse(pendingBookingData);
+      
+      // Create the actual booking with the user's ID
+      const { data: insertedBooking, error: insertError } = await typedSupabase.bookings
+        .insert([{
+          ...bookingData,
+          user_id: user.id,
+          status: 'confirmed', // Payment already completed
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Clear the pending booking data
+      localStorage.removeItem('pendingGuestBooking');
+
+      toast({
+        title: "Boeking voltooid!",
+        description: "Je account is aangemaakt en je boeking is bevestigd.",
+      });
+
+      // Navigate to trips page to show the booking
+      navigate(ROUTES.TRIPS);
+
+    } catch (error) {
+      console.error('Error completing post-payment booking:', error);
+      toast({
+        title: "Boeking niet voltooid",
+        description: "Er is een probleem opgetreden bij het voltooien van je boeking. Neem contact op met de klantenservice.",
+        variant: "destructive",
+      });
+      navigate(ROUTES.HOME);
+    }
+  };
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate(ROUTES.HOME);
+      // If it's post-payment flow, handle the guest booking completion
+      if (isPostPayment && isGuestBooking) {
+        handlePostPaymentBooking();
+      } else {
+        navigate(ROUTES.HOME);
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, isPostPayment, isGuestBooking]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,8 +242,18 @@ export default function Login() {
         <Card className="border-0">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold">
-              {isSignUp ? "Account aanmaken" : "Inloggen"}
+              {isPostPayment && isGuestBooking 
+                ? "Account aanmaken" 
+                : (isSignUp ? "Account aanmaken" : "Inloggen")
+              }
             </CardTitle>
+            {isPostPayment && isGuestBooking && (
+              <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  ✅ Betaling succesvol! Maak nu een account aan om je boeking te voltooien.
+                </p>
+              </div>
+            )}
           </CardHeader>
           
           <CardContent className="space-y-4">

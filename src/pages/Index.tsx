@@ -1,6 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { BookingForm } from "@/components/BookingForm";
+import { BookingInterface } from "@/components/BookingInterface";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Car, MapPin, Clock, Shield, Star, Users } from "lucide-react";
@@ -79,9 +79,9 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Right Side - Booking Form */}
+            {/* Right Side - Booking Interface */}
             <div className="flex justify-center lg:justify-end">
-              <BookingForm />
+              <BookingInterface />
             </div>
           </div>
         </div>
