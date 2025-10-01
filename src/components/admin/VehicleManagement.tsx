@@ -10,24 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
-import { Car, Plus, CreditCard as Edit, Trash2, MapPin } from "lucide-react";
-import { typedSupabase } from "@/lib/supabase-typed";
+import { Car, Plus, CreditCard as Edit, Trash2, MapPin, Calendar } from "lucide-react";
+import { adminAPI, type VehicleWithStats } from "@/lib/admin-api";
 import { useToast } from "@/hooks/use-toast";
 
-interface Vehicle {
-  id: string;
-  name: string | null;
-  type: string | null;
-  capacity: number | null;
-  hourly_rate: number | null;
-  per_km_rate: number | null;
-  available: boolean | null;
-  current_location?: string;
-  current_lat?: number;
-  current_lng?: number;
-  created_at: string | null;
-  updated_at: string | null;
-}
+interface Vehicle extends VehicleWithStats {}
 
 interface VehicleFormData {
   name: string;
@@ -65,16 +52,12 @@ export function VehicleManagement() {
   });
   const { toast } = useToast();
 
-  // Load vehicles from database
+  // Load vehicles from database with statistics
   const loadVehicles = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await typedSupabase.vehicles
-        .select()
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setVehicles(data || []);
+      const data = await adminAPI.vehicles.getVehiclesWithStats();
+      setVehicles(data);
     } catch (error) {
       console.error('Error loading vehicles:', error);
       toast({
@@ -152,10 +135,7 @@ export function VehicleManagement() {
 
       if (editingVehicle) {
         // Update existing vehicle
-        const { error } = await typedSupabase.vehicles
-          .update(editingVehicle.id, vehicleData);
-
-        if (error) throw error;
+        await adminAPI.vehicles.updateVehicle(editingVehicle.id, vehicleData);
 
         toast({
           title: "Voertuig bijgewerkt",
@@ -163,10 +143,10 @@ export function VehicleManagement() {
         });
       } else {
         // Create new vehicle
-        const { error } = await typedSupabase.vehicles
-          .insert([vehicleData]);
-
-        if (error) throw error;
+        await adminAPI.vehicles.createVehicle({
+          ...vehicleData,
+          created_at: new Date().toISOString(),
+        });
 
         toast({
           title: "Voertuig toegevoegd",
@@ -192,10 +172,7 @@ export function VehicleManagement() {
   // Delete vehicle
   const handleDeleteVehicle = async (vehicle: Vehicle) => {
     try {
-      const { error } = await typedSupabase.vehicles
-        .delete(vehicle.id);
-
-      if (error) throw error;
+      await adminAPI.vehicles.deleteVehicle(vehicle.id);
 
       toast({
         title: "Voertuig verwijderd",
@@ -217,13 +194,7 @@ export function VehicleManagement() {
   const toggleAvailability = async (vehicle: Vehicle) => {
     try {
       const newAvailability = !(vehicle.available ?? false);
-      const { error } = await typedSupabase.vehicles
-        .update(vehicle.id, { 
-          available: newAvailability,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
+      await adminAPI.vehicles.toggleAvailability(vehicle.id, newAvailability);
 
       toast({
         title: "Status bijgewerkt",
@@ -415,6 +386,7 @@ export function VehicleManagement() {
                 <TableHead>Capaciteit</TableHead>
                 <TableHead>Uurtarief</TableHead>
                 <TableHead>Per km</TableHead>
+                <TableHead>Boekingen</TableHead>
                 <TableHead>Locatie</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Acties</TableHead>
@@ -432,6 +404,19 @@ export function VehicleManagement() {
                   <TableCell>{vehicle.capacity || 0} personen</TableCell>
                   <TableCell>€{(vehicle.hourly_rate || 0).toFixed(2)}</TableCell>
                   <TableCell>€{(vehicle.per_km_rate || 0).toFixed(3)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Calendar className="w-3 h-3 text-muted-foreground" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{vehicle.total_bookings || 0} totaal</span>
+                        {vehicle.active_bookings > 0 && (
+                          <Badge variant="default" className="text-xs mt-1">
+                            {vehicle.active_bookings} actief
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {vehicle.current_location ? (
                       <div className="flex items-center gap-1 text-sm">

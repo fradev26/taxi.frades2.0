@@ -10,22 +10,11 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Users, Plus, CreditCard as Edit, Trash2, Phone, Mail, MapPin, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminAPI, type ProfileWithEmail } from "@/lib/admin-api";
 import { useToast } from "@/hooks/use-toast";
 import { validateEmail, validatePassword } from "@/utils/validation";
 
-interface Driver {
-  id: string;
-  user_id: string;
-  display_name?: string;
-  phone?: string;
-  company_name?: string;
-  btw_number?: string;
-  address?: string;
-  created_at: string;
-  updated_at: string;
-  // From auth.users via join
-  email?: string;
-}
+interface Driver extends ProfileWithEmail {}
 
 interface DriverFormData {
   display_name: string;
@@ -62,13 +51,9 @@ export function DriverManager() {
     try {
       setIsLoading(true);
 
-      // Use the optimized RPC function to get profiles with user emails
-      const { data: profilesData, error: profilesError } = await supabase.rpc('get_profiles_with_emails');
-
-      if (profilesError) throw profilesError;
-
-      // The RPC function returns data already formatted with email addresses
-      setDrivers(profilesData || []);
+      // Use the optimized admin API
+      const data = await adminAPI.drivers.getProfilesWithEmails();
+      setDrivers(data);
     } catch (error) {
       console.error('Error loading drivers:', error);
       toast({
@@ -131,19 +116,13 @@ export function DriverManager() {
     try {
       if (editingDriver) {
         // Update existing driver profile
-        const { error } = await (supabase as any)
-          .from('profiles')
-          .update({
-            display_name: formData.display_name || null,
-            phone: formData.phone || null,
-            company_name: formData.company_name || null,
-            btw_number: formData.btw_number || null,
-            address: formData.address || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', editingDriver.id);
-
-        if (error) throw error;
+        await adminAPI.drivers.updateDriver(editingDriver.id, {
+          display_name: formData.display_name || null,
+          phone: formData.phone || null,
+          company_name: formData.company_name || null,
+          btw_number: formData.btw_number || null,
+          address: formData.address || null,
+        });
 
         toast({
           title: "Chauffeur bijgewerkt",
@@ -215,23 +194,16 @@ export function DriverManager() {
         }
 
         // Step 3: Create profile for the driver
-        const { error: profileError } = await (supabase as any)
-          .from('profiles')
-          .insert([{
-            user_id: authData.user.id,
-            display_name: formData.display_name || null,
-            phone: formData.phone || null,
-            company_name: formData.company_name || null,
-            btw_number: formData.btw_number || null,
-            address: formData.address || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }]);
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          throw new Error(`Fout bij aanmaken profiel: ${profileError.message}`);
-        }
+        await adminAPI.drivers.createDriver({
+          user_id: authData.user.id,
+          display_name: formData.display_name || null,
+          phone: formData.phone || null,
+          company_name: formData.company_name || null,
+          btw_number: formData.btw_number || null,
+          address: formData.address || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         toast({
           title: "Chauffeur toegevoegd",
@@ -257,12 +229,7 @@ export function DriverManager() {
   // Delete driver profile
   const handleDeleteDriver = async (driver: Driver) => {
     try {
-      const { error } = await (supabase as any)
-        .from('profiles')
-        .delete()
-        .eq('id', driver.id);
-
-      if (error) throw error;
+      await adminAPI.drivers.deleteDriver(driver.id);
 
       toast({
         title: "Chauffeur verwijderd",
