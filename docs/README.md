@@ -4,19 +4,43 @@ This directory contains technical documentation for the Taxi Frades 2.0 applicat
 
 ## Available Documentation
 
+### New Documentation (OAuth & Admin Features) ⭐
+
+- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** - **START HERE** - Complete Dutch implementation guide for OAuth and admin features
+- **[OAUTH_SETUP.md](./OAUTH_SETUP.md)** - Detailed OAuth setup guide (Google & Apple Sign-In)
+- **[ADMIN_FEATURES.md](./ADMIN_FEATURES.md)** - Admin panel optimizations and features reference
+
+### Previous Documentation
+
 - [Admin API Optimization](./ADMIN_API_OPTIMIZATION.md) - Details about database linking optimizations in the admin panel
 
 ## Quick Links
 
-### Admin Panel Optimizations
+### OAuth Integration (New) ⭐
 
-The admin panel has been optimized with:
+The application now supports social login with:
+- **Google Sign-In**: Fully implemented with OAuth 2.0
+- **Apple Sign-In**: Fully implemented with proper styling
+- **Environment Configuration**: Template provided in `.env.example`
+- **Complete Setup Guide**: Step-by-step instructions in [OAUTH_SETUP.md](./OAUTH_SETUP.md)
+
+**What's ready**: All code is implemented. You just need to add your API keys!
+
+See [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md) for the complete setup guide.
+
+### Admin Panel Optimizations (Enhanced) ⭐
+
+The admin panel has been further optimized with:
+- **Real-time Updates**: Automatic refresh when data changes (bookings & vehicles)
+- **Audit Logging**: Track all admin actions with complete history
+- **Batch Operations**: Efficient bulk updates for multiple records
+- **Direct Editing**: Click-to-edit status badges
 - Unified admin API layer for consistent database access
 - Optimized RPC functions to reduce database queries
 - Real-time booking statistics for vehicles
 - Type-safe interfaces and improved error handling
 
-See [ADMIN_API_OPTIMIZATION.md](./ADMIN_API_OPTIMIZATION.md) for detailed information.
+See [ADMIN_FEATURES.md](./ADMIN_FEATURES.md) for detailed information.
 
 ## Architecture Overview
 
