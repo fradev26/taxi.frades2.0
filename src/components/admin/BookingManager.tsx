@@ -60,12 +60,46 @@ export function BookingManager() {
 
   useEffect(() => {
     loadBookings();
+
+    // Subscribe to real-time booking updates
+    const subscription = adminAPI.realtime.subscribeToBookings((payload) => {
+      console.log('Booking change detected:', payload);
+      
+      // Reload bookings when changes are detected
+      loadBookings();
+      
+      // Show notification for new bookings
+      if (payload.eventType === 'INSERT') {
+        toast({
+          title: "Nieuwe boeking",
+          description: "Er is een nieuwe boeking binnengekomen.",
+        });
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      adminAPI.realtime.unsubscribe(subscription);
+    };
   }, []);
 
   // Update booking status
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
+      // Get old status for audit logging
+      const oldBooking = bookings.find(b => b.id === bookingId);
+      const oldStatus = oldBooking?.status;
+
       await adminAPI.bookings.updateBookingStatus(bookingId, newStatus);
+
+      // Log the change
+      await adminAPI.audit.logAction(
+        'update_status',
+        'booking',
+        bookingId,
+        { status: oldStatus },
+        { status: newStatus }
+      );
 
       toast({
         title: "Status bijgewerkt",
@@ -78,6 +112,40 @@ export function BookingManager() {
       toast({
         title: "Fout bij bijwerken",
         description: "Kon status niet bijwerken. Probeer het opnieuw.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update payment status
+  const updatePaymentStatus = async (bookingId: string, newPaymentStatus: string) => {
+    try {
+      // Get old payment status for audit logging
+      const oldBooking = bookings.find(b => b.id === bookingId);
+      const oldPaymentStatus = oldBooking?.payment_status;
+
+      await adminAPI.bookings.updatePaymentStatus(bookingId, newPaymentStatus);
+
+      // Log the change
+      await adminAPI.audit.logAction(
+        'update_payment_status',
+        'booking',
+        bookingId,
+        { payment_status: oldPaymentStatus },
+        { payment_status: newPaymentStatus }
+      );
+
+      toast({
+        title: "Betalingsstatus bijgewerkt",
+        description: "De betalingsstatus is succesvol bijgewerkt.",
+      });
+
+      loadBookings();
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast({
+        title: "Fout bij bijwerken",
+        description: "Kon betalingsstatus niet bijwerken. Probeer het opnieuw.",
         variant: "destructive",
       });
     }
@@ -288,9 +356,23 @@ export function BookingManager() {
                       </TableCell>
                       
                       <TableCell>
-                        <Badge className={paymentBadge.color}>
-                          {paymentBadge.label}
-                        </Badge>
+                        <Select
+                          value={booking.payment_status}
+                          onValueChange={(value) => updatePaymentStatus(booking.id, value)}
+                        >
+                          <SelectTrigger className="w-36">
+                            <Badge className={paymentBadge.color}>
+                              {paymentBadge.label}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {paymentStatusOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       
                       <TableCell>

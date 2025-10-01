@@ -263,6 +263,70 @@ export const driverAPI = {
 };
 
 /**
+ * Audit Logging
+ */
+export interface AuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  old_values?: any;
+  new_values?: any;
+  created_at: string;
+}
+
+export const auditAPI = {
+  /**
+   * Log an admin action
+   */
+  async logAction(action: string, resourceType: string, resourceId: string, oldValues?: any, newValues?: any) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from('audit_logs')
+      .insert([{
+        user_id: user.id,
+        action,
+        resource_type: resourceType,
+        resource_id: resourceId,
+        old_values: oldValues,
+        new_values: newValues,
+      }]);
+    
+    if (error) {
+      console.error('Error logging audit action:', error);
+    }
+  },
+
+  /**
+   * Get audit logs with filters
+   */
+  async getLogs(resourceType?: string, resourceId?: string, limit: number = 100) {
+    let query = supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (resourceType) {
+      query = query.eq('resource_type', resourceType);
+    }
+    
+    if (resourceId) {
+      query = query.eq('resource_id', resourceId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
+  },
+};
+
+/**
  * Batch operations for efficiency
  */
 export const batchAPI = {
@@ -273,7 +337,12 @@ export const batchAPI = {
     const promises = updates.map(({ id, data }) => 
       vehicleAPI.updateVehicle(id, data)
     );
-    return Promise.all(promises);
+    const results = await Promise.allSettled(promises);
+    
+    // Log batch operation
+    await auditAPI.logAction('batch_update', 'vehicles', 'multiple', null, { count: updates.length });
+    
+    return results;
   },
 
   /**
@@ -283,7 +352,75 @@ export const batchAPI = {
     const promises = updates.map(({ id, status }) => 
       bookingAPI.updateBookingStatus(id, status)
     );
-    return Promise.all(promises);
+    const results = await Promise.allSettled(promises);
+    
+    // Log batch operation
+    await auditAPI.logAction('batch_status_update', 'bookings', 'multiple', null, { count: updates.length });
+    
+    return results;
+  },
+
+  /**
+   * Update multiple payment statuses at once
+   */
+  async updateMultiplePaymentStatuses(updates: Array<{ id: string; paymentStatus: string }>) {
+    const promises = updates.map(({ id, paymentStatus }) => 
+      bookingAPI.updatePaymentStatus(id, paymentStatus)
+    );
+    const results = await Promise.allSettled(promises);
+    
+    // Log batch operation
+    await auditAPI.logAction('batch_payment_update', 'bookings', 'multiple', null, { count: updates.length });
+    
+    return results;
+  },
+};
+
+/**
+ * Real-time subscription management
+ */
+export const realtimeAPI = {
+  /**
+   * Subscribe to booking changes
+   */
+  subscribeToBookings(callback: (payload: any) => void) {
+    return supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        callback
+      )
+      .subscribe();
+  },
+
+  /**
+   * Subscribe to vehicle changes
+   */
+  subscribeToVehicles(callback: (payload: any) => void) {
+    return supabase
+      .channel('vehicles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vehicles'
+        },
+        callback
+      )
+      .subscribe();
+  },
+
+  /**
+   * Unsubscribe from a channel
+   */
+  unsubscribe(channel: any) {
+    return supabase.removeChannel(channel);
   },
 };
 
@@ -295,6 +432,8 @@ export const adminAPI = {
   bookings: bookingAPI,
   drivers: driverAPI,
   batch: batchAPI,
+  audit: auditAPI,
+  realtime: realtimeAPI,
 };
 
 export default adminAPI;
