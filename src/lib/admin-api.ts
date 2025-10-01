@@ -271,8 +271,8 @@ export interface AuditLog {
   action: string;
   resource_type: string;
   resource_id: string;
-  old_values?: any;
-  new_values?: any;
+  old_values?: Record<string, unknown>;
+  new_values?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -280,7 +280,7 @@ export const auditAPI = {
   /**
    * Log an admin action
    */
-  async logAction(action: string, resourceType: string, resourceId: string, oldValues?: any, newValues?: any) {
+  async logAction(action: string, resourceType: string, resourceId: string, oldValues?: Record<string, unknown> | null, newValues?: Record<string, unknown> | null) {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) return;
@@ -383,7 +383,7 @@ export const realtimeAPI = {
   /**
    * Subscribe to booking changes
    */
-  subscribeToBookings(callback: (payload: any) => void) {
+  subscribeToBookings(callback: (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => void) {
     return supabase
       .channel('bookings-changes')
       .on(
@@ -401,7 +401,7 @@ export const realtimeAPI = {
   /**
    * Subscribe to vehicle changes
    */
-  subscribeToVehicles(callback: (payload: any) => void) {
+  subscribeToVehicles(callback: (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => void) {
     return supabase
       .channel('vehicles-changes')
       .on(
@@ -419,7 +419,7 @@ export const realtimeAPI = {
   /**
    * Unsubscribe from a channel
    */
-  unsubscribe(channel: any) {
+  unsubscribe(channel: ReturnType<typeof supabase.channel>) {
     return supabase.removeChannel(channel);
   },
 };
