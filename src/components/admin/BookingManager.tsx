@@ -1,21 +1,3 @@
-/// <reference types="@supabase/supabase-js" />
-
-// Extend SupabaseClient to allow custom RPC functions
-declare module '@supabase/supabase-js' {
-  interface SupabaseClient<Database = any> {
-    rpc(
-      fn: 'get_bookings_with_details',
-      params?: Record<string, any>,
-      options?: any
-    ): Promise<{ data: any; error: any }>;
-    rpc(
-      fn: 'get_profiles_with_emails',
-      params?: Record<string, any>,
-      options?: any
-    ): Promise<{ data: any; error: any }>;
-  }
-}
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,41 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CalendarCheck, MapPin, Clock, Euro, User, Car, Phone, MessageCircle, Eye } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { adminAPI, type BookingWithDetails } from "@/lib/admin-api";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDateTime } from "@/utils/formatting";
 import { BookingForm } from "@/components/BookingForm";
 import { Plus } from "lucide-react";
 
-interface Booking {
-  id: string;
-  user_id?: string;
-  company_id?: string;
-  vehicle_id?: string;
-  pickup_address: string;
-  pickup_lat?: number;
-  pickup_lng?: number;
-  destination_address: string;
-  destination_lat?: number;
-  destination_lng?: number;
-  waypoints?: any;
-  scheduled_time: string;
-  estimated_duration?: number;
-  estimated_distance?: number;
-  estimated_cost?: number;
-  final_cost?: number;
-  status: string;
-  payment_status: string;
-  payment_method?: string;
-  payment_id?: string;
-  confirmation_sent: boolean;
-  created_at: string;
-  updated_at: string;
-  // Joined data
-  vehicle_name?: string;
-  user_email?: string;
-  company_name?: string;
-}
+interface Booking extends BookingWithDetails {}
 
 const statusOptions = [
   { value: "pending", label: "In afwachting", color: "bg-yellow-400 text-yellow-900 shadow-md border-2 border-yellow-500" },
@@ -89,13 +43,9 @@ export function BookingManager() {
     try {
       setIsLoading(true);
 
-      // Use the optimized RPC function to get bookings with all related data
-      const { data: bookingsData, error: bookingsError } = await supabase.rpc('get_bookings_with_details');
-
-      if (bookingsError) throw bookingsError;
-
-      // The RPC function returns data already formatted
-      setBookings(bookingsData || []);
+      // Use the optimized admin API
+      const data = await adminAPI.bookings.getBookingsWithDetails();
+      setBookings(data);
     } catch (error) {
       console.error('Error loading bookings:', error);
       toast({
@@ -115,15 +65,7 @@ export function BookingManager() {
   // Update booking status
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const { error } = await (supabase as any)
-        .from('bookings')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', bookingId);
-
-      if (error) throw error;
+      await adminAPI.bookings.updateBookingStatus(bookingId, newStatus);
 
       toast({
         title: "Status bijgewerkt",
