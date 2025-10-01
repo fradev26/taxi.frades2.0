@@ -131,7 +131,7 @@ export function DriverManager() {
     try {
       if (editingDriver) {
         // Update existing driver profile
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('profiles')
           .update({
             display_name: formData.display_name || null,
@@ -199,7 +199,7 @@ export function DriverManager() {
         }
 
         // Step 2: Create entry in public.users table
-        const { error: userError } = await supabase
+        const { error: userError } = await (supabase as any)
           .from('users')
           .insert([{
             id: authData.user.id,
@@ -215,7 +215,7 @@ export function DriverManager() {
         }
 
         // Step 3: Create profile for the driver
-        const { error: profileError } = await supabase
+        const { error: profileError } = await (supabase as any)
           .from('profiles')
           .insert([{
             user_id: authData.user.id,
@@ -257,7 +257,7 @@ export function DriverManager() {
   // Delete driver profile
   const handleDeleteDriver = async (driver: Driver) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .delete()
         .eq('id', driver.id);

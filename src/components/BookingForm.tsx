@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Calendar, Clock, Info, Map } from "lucide-react";
+import { MapPin, Calendar, Clock, Info, Map, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { typedSupabase } from "@/lib/supabase-typed";
 import { supabase } from "@/integrations/supabase/client";
 import { validateBookingForm, sanitizeInput } from "@/utils/validation";
 import { PAYMENT_METHODS } from "@/constants";
@@ -32,6 +33,18 @@ interface BookingFormProps {
   showCancelButton?: boolean;
 }
 
+// Helper function to validate coordinates
+const validateCoordinates = (lat: any, lng: any): { lat: number; lng: number } | null => {
+  const numLat = typeof lat === 'number' ? lat : parseFloat(lat);
+  const numLng = typeof lng === 'number' ? lng : parseFloat(lng);
+  
+  if (isNaN(numLat) || isNaN(numLng) || numLat < -90 || numLat > 90 || numLng < -180 || numLng > 180) {
+    return null;
+  }
+  
+  return { lat: numLat, lng: numLng };
+};
+
 export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButton = false }: BookingFormProps) {
   const [formData, setFormData] = useState<BookingFormData>({
     pickup: "",
@@ -49,10 +62,12 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
   const [selectedTab, setSelectedTab] = useState("oneway");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [showMap, setShowMap] = useState(false);
   const [map, setMap] = useState<any>(null);
   const [pickupMarker, setPickupMarker] = useState<any>(null);
   const [destinationMarker, setDestinationMarker] = useState<any>(null);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
@@ -96,11 +111,18 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             
+            // Validate coordinates
+            const validCoords = validateCoordinates(lat, lng);
+            if (!validCoords) {
+              console.warn('Invalid coordinates received from Google Maps');
+              return;
+            }
+            
             setFormData(prev => ({
               ...prev,
               pickup: place.formatted_address || place.name || "",
-              pickupLat: lat,
-              pickupLng: lng,
+              pickupLat: validCoords.lat,
+              pickupLng: validCoords.lng,
             }));
 
             // Update pickup marker
@@ -144,11 +166,18 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             
+            // Validate coordinates
+            const validCoords = validateCoordinates(lat, lng);
+            if (!validCoords) {
+              console.warn('Invalid coordinates received from Google Maps');
+              return;
+            }
+            
             setFormData(prev => ({
               ...prev,
               destination: place.formatted_address || place.name || "",
-              destinationLat: lat,
-              destinationLng: lng,
+              destinationLat: validCoords.lat,
+              destinationLng: validCoords.lng,
             }));
 
             // Update destination marker
@@ -179,12 +208,24 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
 
     // Wait for Google Maps to load
     if (window.google) {
+      setGoogleMapsLoaded(true);
       initializeGoogleMaps();
     } else {
+      let attempts = 0;
       const checkGoogleMaps = setInterval(() => {
+        attempts++;
         if (window.google) {
           clearInterval(checkGoogleMaps);
+          setGoogleMapsLoaded(true);
           initializeGoogleMaps();
+        } else if (attempts > 100) { // 10 seconds timeout
+          clearInterval(checkGoogleMaps);
+          console.warn('Google Maps failed to load after 10 seconds');
+          toast({
+            title: "Kaart niet beschikbaar",
+            description: "Google Maps kon niet worden geladen.",
+            variant: "destructive",
+          });
         }
       }, 100);
 
@@ -215,19 +256,32 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
   useEffect(() => {
     const loadVehicles = async () => {
       try {
-        const { data, error } = await supabase
+        setIsLoadingVehicles(true);
+        const { data, error } = await (supabase as any)
           .from('vehicles')
           .select('id, type, name')
           .eq('available', true);
 
         if (error) {
           console.error('Error loading vehicles:', error);
+          toast({
+            title: "Fout bij laden voertuigen",
+            description: "Kon beschikbare voertuigen niet laden. Probeer de pagina te vernieuwen.",
+            variant: "destructive",
+          });
           return;
         }
 
         setVehicles(data || []);
       } catch (error) {
         console.error('Error loading vehicles:', error);
+        toast({
+          title: "Fout bij laden voertuigen",
+          description: "Er is een onverwachte fout opgetreden.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingVehicles(false);
       }
     };
 
@@ -269,8 +323,10 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     }
 
     try {
-      // Find the vehicle ID based on selected vehicle type
-      const selectedVehicleData = vehicles.find(v => v.type === formData.vehicleType);
+      // Find the vehicle ID based on selected vehicle type (case-insensitive)
+      const selectedVehicleData = vehicles.find(
+        (v) => (v.type || '').toLowerCase() === (formData.vehicleType || '').toLowerCase()
+      );
       if (!selectedVehicleData) {
         toast({
           title: "Voertuig niet beschikbaar",
@@ -299,13 +355,26 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
         status: 'pending'
       };
 
-      // Insert booking into database
-      const { error } = await supabase
-        .from('bookings')
-        .insert([bookingData]);
+      // Insert booking into database and return the created row
+      const { data: insertedBooking, error: insertError } = await typedSupabase.bookings
+        .insert([bookingData])
+        .select()
+        .single();
 
-      if (error) {
-        throw error;
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Best-effort: mark assigned vehicle as unavailable so it won't be double-booked
+      try {
+        const { error: updateVehicleError } = await typedSupabase.vehicles
+          .update(selectedVehicleData.id, { available: false, updated_at: new Date().toISOString() });
+
+        if (updateVehicleError) {
+          console.warn('Failed to update vehicle availability:', updateVehicleError);
+        }
+      } catch (err) {
+        console.warn('Failed to update vehicle availability:', err);
       }
 
       toast({
@@ -432,16 +501,33 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
               {/* Vehicle Type */}
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Vehicle Type</Label>
-                <Select value={formData.vehicleType} onValueChange={(value) => updateFormData('vehicleType', value)}>
+                  <Select 
+                    value={formData.vehicleType} 
+                    onValueChange={(value) => updateFormData('vehicleType', value)}
+                    disabled={isLoadingVehicles}
+                  >
                   <SelectTrigger className="border-0 border-b border-border rounded-none px-0 focus:ring-0">
-                    <SelectValue placeholder="Select vehicle type" />
+                      <SelectValue placeholder={isLoadingVehicles ? "Loading vehicles..." : "Select vehicle type"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.type}>
-                        {vehicle.name}
-                      </SelectItem>
-                    ))}
+                      {isLoadingVehicles ? (
+                        <SelectItem value="loading" disabled>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading...
+                          </div>
+                        </SelectItem>
+                      ) : vehicles.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          No vehicles available
+                        </SelectItem>
+                      ) : (
+                        vehicles.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.type}>
+                            {vehicle.name}
+                          </SelectItem>
+                        ))
+                      )}
                   </SelectContent>
                 </Select>
               </div>

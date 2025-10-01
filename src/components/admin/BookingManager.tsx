@@ -1,3 +1,21 @@
+/// <reference types="@supabase/supabase-js" />
+
+// Extend SupabaseClient to allow custom RPC functions
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient<Database = any> {
+    rpc(
+      fn: 'get_bookings_with_details',
+      params?: Record<string, any>,
+      options?: any
+    ): Promise<{ data: any; error: any }>;
+    rpc(
+      fn: 'get_profiles_with_emails',
+      params?: Record<string, any>,
+      options?: any
+    ): Promise<{ data: any; error: any }>;
+  }
+}
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,7 +115,7 @@ export function BookingManager() {
   // Update booking status
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('bookings')
         .update({ 
           status: newStatus,
