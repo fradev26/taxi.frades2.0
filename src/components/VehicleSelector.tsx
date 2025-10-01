@@ -1,153 +1,101 @@
-import { useState } from "react";
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Car, Briefcase, Users, Leaf } from "lucide-react";
+import { Check } from "lucide-react";
+import { STANDARD_VEHICLES, formatPrice } from "@/config/vehicles";
 import { cn } from "@/lib/utils";
 
-export interface VehicleOption {
-  id: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  price: string;
-  capacity: string;
-  comfort: string;
-  description: string;
-  estimatedTime: string;
-}
-
 interface VehicleSelectorProps {
-  selectedVehicle: string;
-  onVehicleChange: (vehicleId: string) => void;
+  selectedVehicle?: string;
+  onVehicleSelect: (vehicleId: string) => void;
+  showPricing?: boolean;
+  bookingType?: "regular" | "hourly";
   className?: string;
 }
 
-const vehicleOptions: VehicleOption[] = [
-  {
-    id: "standard",
-    name: "Standaard",
-    icon: Car,
-    price: "€2,50/km",
-    capacity: "1-4 personen",
-    comfort: "Comfortabel",
-    description: "Betrouwbare taxi voor dagelijks gebruik",
-    estimatedTime: "3-5 min"
-  },
-  {
-    id: "business",
-    name: "Business",
-    icon: Briefcase,
-    price: "€3,50/km",
-    capacity: "1-4 personen",
-    comfort: "Premium",
-    description: "Luxe voertuigen voor zakelijke ritten",
-    estimatedTime: "5-8 min"
-  },
-  {
-    id: "minibus",
-    name: "Minibus",
-    icon: Users,
-    price: "€4,00/km",
-    capacity: "5-8 personen",
-    comfort: "Ruim",
-    description: "Ideaal voor groepen en families",
-    estimatedTime: "8-12 min"
-  },
-  {
-    id: "eco",
-    name: "Eco",
-    icon: Leaf,
-    price: "€2,20/km",
-    capacity: "1-4 personen",
-    comfort: "Milieuvriendelijk",
-    description: "Elektrische en hybride voertuigen",
-    estimatedTime: "4-7 min"
-  }
-];
-
-export function VehicleSelector({ selectedVehicle, onVehicleChange, className }: VehicleSelectorProps) {
+export function VehicleSelector({
+  selectedVehicle,
+  onVehicleSelect,
+  showPricing = false,
+  bookingType = "regular",
+  className = "",
+}: VehicleSelectorProps) {
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground">Voertuigtype</h3>
-        <span className="text-xs text-muted-foreground">
-          {vehicleOptions.find(v => v.id === selectedVehicle)?.estimatedTime} wachttijd
-        </span>
-      </div>
+    <div className={cn("w-full", className)}>
+      <h3 
+        className="text-base font-medium mb-3 relative z-10"
+        style={{ color: 'white' }}
+      >
+        Voertuig
+      </h3>
       
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        <TooltipProvider>
-          {vehicleOptions.map((vehicle) => {
-            const isSelected = selectedVehicle === vehicle.id;
-            const IconComponent = vehicle.icon;
-            
-            return (
-              <Tooltip key={vehicle.id}>
-                <TooltipTrigger asChild>
-                  <Card
-                    className={cn(
-                      "flex-shrink-0 cursor-pointer transition-all duration-200 hover:shadow-md",
-                      "border-2 min-w-[100px]",
-                      isSelected 
-                        ? "border-primary bg-primary/5 shadow-sm" 
-                        : "border-border hover:border-primary/50"
-                    )}
-                    onClick={() => onVehicleChange(vehicle.id)}
+      <div className="flex gap-3 justify-center items-stretch">
+        {STANDARD_VEHICLES.map((vehicle) => {
+          const isSelected = selectedVehicle === vehicle.id;
+          
+          return (
+            <div
+              key={vehicle.id}
+              className="cursor-pointer rounded-lg text-center flex flex-col justify-center items-center"
+              onClick={() => onVehicleSelect(vehicle.id)}
+              style={{
+                backgroundColor: isSelected ? 'white' : 'black',
+                color: isSelected ? 'black' : 'white',
+                width: '120px',
+                height: '80px',
+                padding: '12px',
+                flex: '0 0 120px',
+                border: '1px solid transparent',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              {/* Vehicle Icon */}
+              <div className="flex justify-center items-center" style={{ marginBottom: '4px' }}>
+                <vehicle.icon 
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    color: isSelected ? 'black' : 'white'
+                  }}
+                />
+              </div>
+
+              {/* Vehicle Info */}
+              <div className="flex flex-col items-center">
+                <div 
+                  style={{
+                    color: isSelected ? 'black' : 'white',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    lineHeight: '1.2',
+                    marginBottom: '2px',
+                    textAlign: 'center'
+                  }}
+                >
+                  {vehicle.name}
+                </div>
+                {showPricing && (
+                  <div 
+                    style={{
+                      color: isSelected ? 'black' : 'white',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      lineHeight: '1.2',
+                      textAlign: 'center'
+                    }}
                   >
-                    <CardContent className="p-4 text-center space-y-2">
-                      <div className={cn(
-                        "w-8 h-8 mx-auto rounded-lg flex items-center justify-center transition-colors",
-                        isSelected 
-                          ? "bg-primary text-primary-foreground" 
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        <IconComponent className="w-4 h-4" />
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <p className={cn(
-                          "text-xs font-medium transition-colors",
-                          isSelected ? "text-primary" : "text-foreground"
-                        )}>
-                          {vehicle.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {vehicle.price}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TooltipTrigger>
-                
-                <TooltipContent side="top" className="max-w-xs">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <IconComponent className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{vehicle.name}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {vehicle.description}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="font-medium">Prijs:</span> {vehicle.price}
-                      </div>
-                      <div>
-                        <span className="font-medium">Capaciteit:</span> {vehicle.capacity}
-                      </div>
-                      <div>
-                        <span className="font-medium">Comfort:</span> {vehicle.comfort}
-                      </div>
-                      <div>
-                        <span className="font-medium">Wachttijd:</span> {vehicle.estimatedTime}
-                      </div>
-                    </div>
+                    {bookingType === "hourly" 
+                      ? `${formatPrice(vehicle.hourlyRate)}/u`
+                      : `${formatPrice(vehicle.perKmRate)}/km`
+                    }
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </TooltipProvider>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
+

@@ -13,6 +13,8 @@ import Wallet from "./pages/Wallet";
 import Trips from "./pages/Trips";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
+import HourlyBooking from "./pages/HourlyBooking";
+import PricingTest from "./pages/PricingTest";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -39,6 +41,8 @@ const App = () => (
                 <Route path={ROUTES.TRIPS} element={<Trips />} />
                 <Route path={ROUTES.ACCOUNT} element={<Account />} />
                 <Route path={ROUTES.ADMIN} element={<Admin />} />
+                <Route path={ROUTES.HOURLY_BOOKING} element={<HourlyBooking />} />
+                <Route path="/pricing-test" element={<PricingTest />} />
                 <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicy />} />
                 <Route path={ROUTES.COOKIE_POLICY} element={<CookiePolicy />} />
                 <Route path={ROUTES.TERMS_OF_SERVICE} element={<TermsOfService />} />
