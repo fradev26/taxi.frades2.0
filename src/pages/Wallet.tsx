@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navigation } from "@/components/Navigation";
 import { EmptyState } from "@/components/EmptyState";
+import { AddPaymentMethodDialog } from "@/components/AddPaymentMethodDialog";
+import { TopUpCreditDialog } from "@/components/TopUpCreditDialog";
 import { 
   CreditCard, 
   Smartphone, 
@@ -13,6 +16,8 @@ import {
 } from "lucide-react";
 
 export default function Wallet() {
+  const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
+  const [showTopUpCredit, setShowTopUpCredit] = useState(false);
   const paymentMethods = [
     {
       id: "1",
@@ -69,6 +74,7 @@ export default function Wallet() {
                   variant="secondary"
                   size="sm"
                   className="bg-white/20 text-primary-foreground border-white/20 hover:bg-white/30"
+                  onClick={() => setShowTopUpCredit(true)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Opwaarderen
@@ -114,6 +120,7 @@ export default function Wallet() {
                 <Button
                   variant="taxi-outline"
                   className="w-full gap-2"
+                  onClick={() => setShowAddPaymentMethod(true)}
                 >
                   <Plus className="w-4 h-4" />
                   Betaalmethode toevoegen
@@ -170,9 +177,7 @@ export default function Wallet() {
                     title="Geen transacties"
                     description="Je transactiegeschiedenis verschijnt hier na je eerste betaling of opwaardering."
                     actionLabel="Krediet opwaarderen"
-                    onAction={() => {
-                      // Handle credit top-up
-                    }}
+                    onAction={() => setShowTopUpCredit(true)}
                   />
                 )}
                 
@@ -195,11 +200,19 @@ export default function Wallet() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Button variant="taxi-outline" className="h-16 flex-col gap-2">
+                <Button 
+                  variant="taxi-outline" 
+                  className="h-16 flex-col gap-2"
+                  onClick={() => setShowTopUpCredit(true)}
+                >
                   <Euro className="w-6 h-6" />
                   <span>Krediet opwaarderen</span>
                 </Button>
-                <Button variant="taxi-outline" className="h-16 flex-col gap-2">
+                <Button 
+                  variant="taxi-outline" 
+                  className="h-16 flex-col gap-2"
+                  onClick={() => setShowAddPaymentMethod(true)}
+                >
                   <CreditCard className="w-6 h-6" />
                   <span>Kaart toevoegen</span>
                 </Button>
@@ -212,6 +225,16 @@ export default function Wallet() {
           </Card>
         </div>
       </div>
+
+      {/* Stripe Integration Dialogs */}
+      <AddPaymentMethodDialog 
+        open={showAddPaymentMethod} 
+        onOpenChange={setShowAddPaymentMethod} 
+      />
+      <TopUpCreditDialog 
+        open={showTopUpCredit} 
+        onOpenChange={setShowTopUpCredit} 
+      />
     </div>
   );
 }
