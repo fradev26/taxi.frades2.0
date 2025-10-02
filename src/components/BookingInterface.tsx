@@ -43,8 +43,8 @@ export function BookingInterface({ className = "" }: BookingInterfaceProps) {
   }, [searchParams, activeTab]);
 
   return (
-    <Card className={`w-full max-w-lg mx-auto bg-card/95 backdrop-blur-sm border-border/50 shadow-2xl ${className}`}>
-      <CardContent className="p-0">
+    <Card className={`w-full max-w-lg mx-auto bg-card/95 backdrop-blur-sm border-border/50 shadow-2xl min-h-[600px] ${className}`}>
+      <CardContent className="p-0 max-h-none overflow-visible">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2 rounded-none rounded-t-lg bg-muted/50 h-12">
             <TabsTrigger 
@@ -65,15 +65,15 @@ export function BookingInterface({ className = "" }: BookingInterfaceProps) {
             </TabsTrigger>
           </TabsList>
           
-          <div className="max-h-[75vh] overflow-y-auto">
+          <div className="w-full min-h-[520px]">
             <TabsContent value="ride" className="mt-0 focus-visible:outline-none">
-              <div className="p-6">
+              <div className="p-4 md:p-6">
                 <BookingForm showCancelButton={false} />
               </div>
             </TabsContent>
             
             <TabsContent value="hourly" className="mt-0 focus-visible:outline-none">
-              <div className="p-6">
+              <div className="p-4 md:p-6">
                 <CompactHourlyBookingForm />
               </div>
             </TabsContent>

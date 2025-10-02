@@ -15,6 +15,8 @@ import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import HourlyBooking from "./pages/HourlyBooking";
 import PricingTest from "./pages/PricingTest";
+import OverOns from "./pages/OverOns";
+import VoorBedrijven from "./pages/VoorBedrijven";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -43,6 +45,8 @@ const App = () => (
                 <Route path={ROUTES.ADMIN} element={<Admin />} />
                 <Route path={ROUTES.HOURLY_BOOKING} element={<HourlyBooking />} />
                 <Route path="/pricing-test" element={<PricingTest />} />
+                <Route path={ROUTES.OVER_ONS} element={<OverOns />} />
+                <Route path={ROUTES.VOOR_BEDRIJVEN} element={<VoorBedrijven />} />
                 <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicy />} />
                 <Route path={ROUTES.COOKIE_POLICY} element={<CookiePolicy />} />
                 <Route path={ROUTES.TERMS_OF_SERVICE} element={<TermsOfService />} />

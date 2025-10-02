@@ -13,6 +13,8 @@ export const ROUTES = {
   ACCOUNT: '/account',
   ADMIN: '/admin',
   HOURLY_BOOKING: '/hourly-booking',
+  OVER_ONS: '/over-ons',
+  VOOR_BEDRIJVEN: '/voor-bedrijven',
   PRIVACY_POLICY: '/privacy-policy',
   COOKIE_POLICY: '/cookie-policy',
   TERMS_OF_SERVICE: '/terms-of-service',

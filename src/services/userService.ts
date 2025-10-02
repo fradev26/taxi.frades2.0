@@ -24,7 +24,7 @@ export interface UpdateUserProfileData {
 
 export const getUserProfile = async (userId: string): Promise<{ data: UserProfile | null; error: any }> => {
   const { data, error } = await supabase
-    .from('users')
+    .from('profiles')
     .select('*')
     .eq('id', userId)
     .maybeSingle();
@@ -37,7 +37,7 @@ export const updateUserProfile = async (
   updates: UpdateUserProfileData
 ): Promise<{ data: UserProfile | null; error: any }> => {
   const { data, error } = await supabase
-    .from('users')
+    .from('profiles')
     .update({
       ...updates,
       updated_at: new Date().toISOString()

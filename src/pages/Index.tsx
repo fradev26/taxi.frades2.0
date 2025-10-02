@@ -4,7 +4,8 @@ import { BookingInterface } from "@/components/BookingInterface";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Car, MapPin, Clock, Shield, Star, Users } from "lucide-react";
-import { APP_CONFIG } from "@/constants";
+import { Link } from "react-router-dom";
+import { APP_CONFIG, ROUTES } from "@/constants";
 
 const Index = () => {
   const features = [
@@ -42,18 +43,19 @@ const Index = () => {
       <Navigation />
       
       {/* Hero Section with Booking Form */}
-      <section className="relative min-h-[80vh] flex items-center">
+      <section className="relative flex items-center py-8 md:py-12">
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed"
           style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://www.mercedes-benz.co.za/content/dam/hq/passengercars/cars/s-class/s-class-saloon-wv223-pi/overview/stage/09-2022/images/mercedes-benz-s-class-wv223-stage-3840x1707-09-2022.jpg/1757426873806.jpg?im=Crop,rect=(1923,0,1707,1707);Resize=(828,828)')`
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://www.mercedes-benz.co.za/content/dam/hq/passengercars/cars/s-class/s-class-saloon-wv223-pi/overview/stage/09-2022/images/mercedes-benz-s-class-wv223-stage-3840x1707-09-2022.jpg/1757426873806.jpg?im=Crop,rect=(1923,0,1707,1707);Resize=(828,828)')`,
+            backgroundAttachment: 'fixed'
           }}
         />
         
         {/* Content Container */}
-        <div className="relative z-10 container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
             {/* Left Side - Hero Text */}
             <div className="text-white space-y-8">
@@ -68,13 +70,17 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="taxi-primary" size="lg" className="text-lg px-8">
-                  <Car className="w-5 h-5 mr-2" />
-                  Meer informatie
+                <Button asChild variant="taxi-primary" size="lg" className="text-lg px-8">
+                  <Link to={ROUTES.OVER_ONS}>
+                    <Car className="w-5 h-5 mr-2" />
+                    Meer informatie
+                  </Link>
                 </Button>
-                <Button variant="taxi-outline" size="lg" className="text-lg px-8 border-white text-white hover:bg-white hover:text-black">
-                  <Users className="w-5 h-5 mr-2" />
-                  Voor bedrijven
+                <Button asChild variant="taxi-outline" size="lg" className="text-lg px-8 border-white text-white hover:bg-white hover:text-black">
+                  <Link to={ROUTES.VOOR_BEDRIJVEN}>
+                    <Users className="w-5 h-5 mr-2" />
+                    Voor bedrijven
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -99,11 +105,15 @@ const Index = () => {
               Nieuwe gebruikers krijgen €10 korting!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="taxi-primary" size="lg" className="text-lg px-8">
-                Account aanmaken
+              <Button asChild variant="taxi-primary" size="lg" className="text-lg px-8">
+                <Link to={ROUTES.LOGIN}>
+                  Account aanmaken
+                </Link>
               </Button>
-              <Button variant="taxi-outline" size="lg" className="text-lg px-8">
-                Meer informatie
+              <Button asChild variant="taxi-outline" size="lg" className="text-lg px-8">
+                <Link to={ROUTES.OVER_ONS}>
+                  Meer informatie
+                </Link>
               </Button>
             </div>
           </div>

@@ -10,20 +10,39 @@ CREATE TABLE IF NOT EXISTS public.stripe_customers (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Create payment_methods table to store user payment methods
-CREATE TABLE IF NOT EXISTS public.payment_methods (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    stripe_payment_method_id TEXT NOT NULL UNIQUE,
-    type TEXT NOT NULL,
-    card_brand TEXT,
-    card_last4 TEXT,
-    card_exp_month INTEGER,
-    card_exp_year INTEGER,
-    is_default BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+-- Add Stripe-specific columns to existing payment_methods table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'payment_methods' AND column_name = 'stripe_payment_method_id') THEN
+        ALTER TABLE public.payment_methods ADD COLUMN stripe_payment_method_id TEXT UNIQUE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'payment_methods' AND column_name = 'card_exp_month') THEN
+        ALTER TABLE public.payment_methods ADD COLUMN card_exp_month INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'payment_methods' AND column_name = 'card_exp_year') THEN
+        ALTER TABLE public.payment_methods ADD COLUMN card_exp_year INTEGER;
+    END IF;
+    
+    -- Rename columns to match Stripe naming if needed
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'payment_methods' AND column_name = 'last4') 
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name = 'payment_methods' AND column_name = 'card_last4') THEN
+        ALTER TABLE public.payment_methods RENAME COLUMN last4 TO card_last4;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'payment_methods' AND column_name = 'brand') 
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name = 'payment_methods' AND column_name = 'card_brand') THEN
+        ALTER TABLE public.payment_methods RENAME COLUMN brand TO card_brand;
+    END IF;
+END $$;
 
 -- Create transactions table to store payment history
 CREATE TABLE IF NOT EXISTS public.transactions (
@@ -43,9 +62,12 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 -- Add wallet_balance to profiles table if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'profiles' AND column_name = 'wallet_balance') THEN
-        ALTER TABLE public.profiles ADD COLUMN wallet_balance INTEGER DEFAULT 0;
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'public' AND table_name = 'profiles') THEN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = 'profiles' AND column_name = 'wallet_balance') THEN
+            ALTER TABLE public.profiles ADD COLUMN wallet_balance INTEGER DEFAULT 0;
+        END IF;
     END IF;
 END $$;
 
