@@ -946,6 +946,38 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     if (!user && formData.paymentMethod === 'direct') {
       return handleGuestBooking();
     }
+    
+    // Ensure user exists in users table (should be created by trigger, but check anyway)
+    if (user) {
+      try {
+        const { data: existingUser, error: userCheckError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        
+        if (userCheckError && userCheckError.code === 'PGRST116') {
+          // User doesn't exist in users table, create them
+          console.log('User not found in users table, creating...');
+          const { error: createUserError } = await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.email || '',
+              first_name: user.user_metadata?.first_name || '',
+              last_name: user.user_metadata?.last_name || ''
+            });
+          
+          if (createUserError) {
+            console.error('Failed to create user in users table:', createUserError);
+            // Continue anyway, the booking might work without it
+          }
+        }
+      } catch (err) {
+        console.warn('Error checking user existence:', err);
+        // Continue anyway
+      }
+    }
 
     const errors = validateBookingForm(formData);
     
