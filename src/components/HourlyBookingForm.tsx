@@ -109,6 +109,86 @@ export function HourlyBookingForm({
   const { user } = useAuth();
   const pickupInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-fill current date and time on mount
+  useEffect(() => {
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5);
+    const roundedTime = TIME_SLOTS.find(slot => slot >= currentTime) || TIME_SLOTS[0];
+    
+    setBookingData(prev => ({
+      ...prev,
+      startDate: now,
+      startTime: roundedTime,
+    }));
+  }, []);
+
+  // Function to get current location
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocatie niet ondersteund",
+        description: "Uw browser ondersteunt geen geolocatie.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Locatie ophalen...",
+      description: "Even geduld terwijl we uw locatie bepalen.",
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Reverse geocode to get address if Google Maps is available
+        if (window.google) {
+          const geocoder = new window.google.maps.Geocoder();
+          const latlng = { lat: latitude, lng: longitude };
+          
+          geocoder.geocode({ location: latlng }, (results: any, status: any) => {
+            if (status === "OK" && results[0]) {
+              setBookingData(prev => ({
+                ...prev,
+                pickupLocation: results[0].formatted_address,
+                pickupCoords: { lat: latitude, lng: longitude },
+              }));
+
+              toast({
+                title: "Locatie gevonden",
+                description: "Uw huidige locatie is ingevuld.",
+              });
+            } else {
+              toast({
+                title: "Adres niet gevonden",
+                description: "Kon geen adres vinden voor uw locatie.",
+                variant: "destructive",
+              });
+            }
+          });
+        } else {
+          toast({
+            title: "Kaart niet beschikbaar",
+            description: "Google Maps is niet geladen. Probeer later opnieuw.",
+            variant: "destructive",
+          });
+        }
+      },
+      (error) => {
+        let message = "Kon uw locatie niet bepalen.";
+        if (error.code === error.PERMISSION_DENIED) {
+          message = "Toegang tot locatie is geweigerd. Sta locatietoegang toe in uw browser.";
+        }
+        toast({
+          title: "Locatiefout",
+          description: message,
+          variant: "destructive",
+        });
+      }
+    );
+  };
+
   // Calculate total price
   const calculatePrice = () => {
     const selectedVehicle = STANDARD_VEHICLES.find(v => v.id === bookingData.vehicleType);
@@ -401,9 +481,21 @@ export function HourlyBookingForm({
 
             {/* Pickup Location */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-2 h-2 bg-accent-green rounded-full"></div>
-                <span>From</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 bg-accent-green rounded-full"></div>
+                  <span>From</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="taxi-ghost"
+                  size="sm"
+                  onClick={getCurrentLocation}
+                  className="h-6 px-2 text-xs"
+                >
+                  <Navigation className="w-3 h-3 mr-1" />
+                  Huidige locatie
+                </Button>
               </div>
               
               <div className="relative">

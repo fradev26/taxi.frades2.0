@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Calendar, Clock, Info, Map, Loader2, User, Mail, Phone, Plus, X } from "lucide-react";
+import { MapPin, Calendar, Clock, Info, Map, Loader2, User, Mail, Phone, Plus, X, Navigation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { typedSupabase } from "@/lib/supabase-typed";
@@ -100,6 +100,116 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
   
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Auto-fill current date and time on mount
+  useEffect(() => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().slice(0, 5);
+    
+    setFormData(prev => ({
+      ...prev,
+      date: today,
+      time: currentTime,
+    }));
+  }, []);
+
+  // Function to get current location
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocatie niet ondersteund",
+        description: "Uw browser ondersteunt geen geolocatie.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Locatie ophalen...",
+      description: "Even geduld terwijl we uw locatie bepalen.",
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Reverse geocode to get address
+        if (window.google) {
+          const geocoder = new window.google.maps.Geocoder();
+          const latlng = { lat: latitude, lng: longitude };
+          
+          geocoder.geocode({ location: latlng }, (results: any, status: any) => {
+            if (status === "OK" && results[0]) {
+              setFormData(prev => ({
+                ...prev,
+                pickup: results[0].formatted_address,
+                pickupLat: latitude,
+                pickupLng: longitude,
+              }));
+
+              // Update pickup marker
+              if (map) {
+                if (pickupMarker) {
+                  pickupMarker.setMap(null);
+                }
+                const newPickupMarker = new window.google.maps.Marker({
+                  position: { lat: latitude, lng: longitude },
+                  map: map,
+                  title: "Ophaallocatie",
+                  icon: {
+                    path: window.google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: "#10b981",
+                    fillOpacity: 1,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 2,
+                  }
+                });
+                setPickupMarker(newPickupMarker);
+                map.setCenter({ lat: latitude, lng: longitude });
+                map.setZoom(15);
+              }
+
+              toast({
+                title: "Locatie gevonden",
+                description: "Uw huidige locatie is ingevuld.",
+              });
+            } else {
+              toast({
+                title: "Adres niet gevonden",
+                description: "Kon geen adres vinden voor uw locatie.",
+                variant: "destructive",
+              });
+            }
+          });
+        } else {
+          // If Google Maps is not loaded, just set coordinates
+          setFormData(prev => ({
+            ...prev,
+            pickupLat: latitude,
+            pickupLng: longitude,
+          }));
+          
+          toast({
+            title: "Locatie gevonden",
+            description: "Coördinaten zijn ingevuld, maar wacht op kaart voor adres.",
+          });
+        }
+      },
+      (error) => {
+        let message = "Kon uw locatie niet bepalen.";
+        if (error.code === error.PERMISSION_DENIED) {
+          message = "Toegang tot locatie is geweigerd. Sta locatietoegang toe in uw browser.";
+        }
+        toast({
+          title: "Locatiefout",
+          description: message,
+          variant: "destructive",
+        });
+      }
+    );
+  };
 
   // Stopover management functions
   const addStopover = () => {
@@ -1076,9 +1186,21 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     >
           {/* From Field */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <div className="w-2 h-2 bg-accent-green rounded-full"></div>
-          <span>From</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-2 h-2 bg-accent-green rounded-full"></div>
+                <span>From</span>
+              </div>
+              <Button
+                type="button"
+                variant="taxi-ghost"
+                size="sm"
+                onClick={getCurrentLocation}
+                className="h-6 px-2 text-xs"
+              >
+                <Navigation className="w-3 h-3 mr-1" />
+                Huidige locatie
+              </Button>
             </div>
             <Input
           ref={pickupInputRef}

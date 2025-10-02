@@ -21,6 +21,9 @@ import TermsOfService from "./pages/TermsOfService";
 import SalesTerms from "./pages/SalesTerms";
 import LegalInfo from "./pages/LegalInfo";
 import SiteMap from "./pages/SiteMap";
+import OverOns from "./pages/OverOns";
+import VoorBedrijven from "./pages/VoorBedrijven";
+import BelastingProfielZakelijk from "./pages/BelastingProfielZakelijk";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +52,9 @@ const App = () => (
                 <Route path={ROUTES.SALES_TERMS} element={<SalesTerms />} />
                 <Route path={ROUTES.LEGAL_INFO} element={<LegalInfo />} />
                 <Route path={ROUTES.SITE_MAP} element={<SiteMap />} />
+                <Route path={ROUTES.OVER_ONS} element={<OverOns />} />
+                <Route path={ROUTES.VOOR_BEDRIJVEN} element={<VoorBedrijven />} />
+                <Route path={ROUTES.BELASTING_PROFIEL_ZAKELIJK} element={<BelastingProfielZakelijk />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
