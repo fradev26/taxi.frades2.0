@@ -456,6 +456,16 @@ export default function Account() {
                   <CreditCard className="w-6 h-6" />
                   <span>Betaalmethoden</span>
                 </Button>
+                {isBusinessAccount && (
+                  <Button 
+                    variant="taxi-outline" 
+                    className="h-16 flex-col gap-2"
+                    onClick={() => navigate('/belasting-profiel-zakelijk')}
+                  >
+                    <Building className="w-6 h-6" />
+                    <span>Belastingprofiel</span>
+                  </Button>
+                )}
                 <Button variant="taxi-outline" className="h-16 flex-col gap-2">
                   <Shield className="w-6 h-6" />
                   <span>Privacy</span>
