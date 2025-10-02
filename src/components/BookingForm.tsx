@@ -656,18 +656,29 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     }
 
     try {
-      // Find the vehicle
-      const selectedVehicleData = vehicles.find(
+      // Find the vehicle (use same logic as authenticated booking)
+      let selectedVehicleData = vehicles.find(
         (v) => (v.type || '').toLowerCase() === (formData.vehicleType || '').toLowerCase()
       );
-      if (!selectedVehicleData) {
-        toast({
-          title: "Voertuig niet beschikbaar",
-          description: "Het geselecteerde voertuigtype is momenteel niet beschikbaar.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
+      
+      // If no exact match, try to find a compatible vehicle
+      if (!selectedVehicleData && vehicles.length > 0) {
+        const vehicleTypeMapping: { [key: string]: string[] } = {
+          'standard': ['sedan', 'eco', 'standard'],
+          'luxury': ['luxury', 'premium'],
+          'van': ['van', 'suv', 'minivan']
+        };
+        
+        const compatibleTypes = vehicleTypeMapping[formData.vehicleType.toLowerCase()] || [];
+        selectedVehicleData = vehicles.find(
+          (v) => compatibleTypes.includes((v.type || '').toLowerCase())
+        );
+      }
+      
+      // If still no match, use any available vehicle as fallback
+      if (!selectedVehicleData && vehicles.length > 0) {
+        selectedVehicleData = vehicles[0];
+        console.warn(`No exact vehicle match for ${formData.vehicleType}, using fallback for guest booking`);
       }
 
       // For guest bookings, we'll store the booking with guest information
@@ -676,7 +687,8 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
       
       // Create a temporary booking record with guest info
       const guestBookingData = {
-        vehicle_id: selectedVehicleData.id,
+        vehicle_id: selectedVehicleData?.id || null,
+        vehicle_type: formData.vehicleType,
         pickup_address: formData.pickup,
         pickup_lat: formData.pickupLat,
         pickup_lng: formData.pickupLng,
@@ -934,6 +946,33 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     if (!user && formData.paymentMethod === 'direct') {
       return handleGuestBooking();
     }
+    
+    // Ensure user exists in users table (should be created by trigger, but check anyway)
+    // Note: The trigger should handle this, but we check to provide better error messages
+    if (user) {
+      try {
+        const { data: existingUser, error: userCheckError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (!existingUser && userCheckError?.code === 'PGRST116') {
+          // User doesn't exist in users table - this means the trigger failed
+          console.error('User not found in users table. The signup trigger may have failed.');
+          toast({
+            title: "Account niet compleet",
+            description: "Je account is niet volledig ingesteld. Probeer opnieuw in te loggen.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('Error checking user existence:', err);
+        // Continue anyway - the booking might still work
+      }
+    }
 
     const errors = validateBookingForm(formData);
     
@@ -949,26 +988,40 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
 
     try {
       // Find the vehicle ID based on selected vehicle type (case-insensitive)
-      const selectedVehicleData = vehicles.find(
+      // First try exact match, then fallback to any available vehicle
+      let selectedVehicleData = vehicles.find(
         (v) => (v.type || '').toLowerCase() === (formData.vehicleType || '').toLowerCase()
       );
-      if (!selectedVehicleData) {
-        toast({
-          title: "Voertuig niet beschikbaar",
-          description: "Het geselecteerde voertuigtype is momenteel niet beschikbaar.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
+      
+      // If no exact match, try to find a compatible vehicle
+      if (!selectedVehicleData && vehicles.length > 0) {
+        // Try to find a vehicle based on category mapping
+        const vehicleTypeMapping: { [key: string]: string[] } = {
+          'standard': ['sedan', 'eco', 'standard'],
+          'luxury': ['luxury', 'premium'],
+          'van': ['van', 'suv', 'minivan']
+        };
+        
+        const compatibleTypes = vehicleTypeMapping[formData.vehicleType.toLowerCase()] || [];
+        selectedVehicleData = vehicles.find(
+          (v) => compatibleTypes.includes((v.type || '').toLowerCase())
+        );
+      }
+      
+      // If still no match, use any available vehicle as fallback
+      if (!selectedVehicleData && vehicles.length > 0) {
+        selectedVehicleData = vehicles[0];
+        console.warn(`No exact vehicle match for ${formData.vehicleType}, using fallback vehicle:`, selectedVehicleData);
       }
 
       // Combine date and time into ISO string
       const scheduledTime = new Date(`${formData.date}T${formData.time}`).toISOString();
 
-      // Prepare booking data
+      // Prepare booking data - vehicle_id is optional, vehicle_type stores user's selection
       const bookingData = {
         user_id: user.id,
-        vehicle_id: selectedVehicleData.id,
+        vehicle_id: selectedVehicleData?.id || null,
+        vehicle_type: formData.vehicleType,
         pickup_address: formData.pickup,
         pickup_lat: formData.pickupLat,
         pickup_lng: formData.pickupLng,
@@ -981,25 +1034,32 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
       };
 
       // Insert booking into database and return the created row
+      console.log('Attempting to insert booking:', bookingData);
       const { data: insertedBooking, error: insertError } = await typedSupabase.bookings
         .insert([bookingData])
         .select()
         .single();
 
       if (insertError) {
+        console.error('Booking insert error:', insertError);
         throw insertError;
       }
+      
+      console.log('Booking created successfully:', insertedBooking);
 
       // Best-effort: mark assigned vehicle as unavailable so it won't be double-booked
-      try {
-        const { error: updateVehicleError } = await typedSupabase.vehicles
-          .update(selectedVehicleData.id, { available: false, updated_at: new Date().toISOString() });
+      // Only attempt this if we have a valid vehicle_id
+      if (selectedVehicleData?.id) {
+        try {
+          const { error: updateVehicleError } = await typedSupabase.vehicles
+            .update(selectedVehicleData.id, { available: false, updated_at: new Date().toISOString() });
 
-        if (updateVehicleError) {
-          console.warn('Failed to update vehicle availability:', updateVehicleError);
+          if (updateVehicleError) {
+            console.warn('Failed to update vehicle availability:', updateVehicleError);
+          }
+        } catch (err) {
+          console.warn('Failed to update vehicle availability:', err);
         }
-      } catch (err) {
-        console.warn('Failed to update vehicle availability:', err);
       }
 
       toast({
@@ -1052,11 +1112,28 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
         setDirectionsRenderer(null);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = "Er is een fout opgetreden bij het boeken van je rit. Probeer het opnieuw.";
+      
+      if (error?.message) {
+        // Check for specific error types
+        if (error.message.includes('permission') || error.message.includes('policy')) {
+          errorMessage = "Je hebt geen toestemming om een boeking te maken. Zorg dat je bent ingelogd.";
+        } else if (error.message.includes('duplicate')) {
+          errorMessage = "Deze boeking bestaat al. Controleer je huidige boekingen.";
+        } else if (error.message.includes('foreign key')) {
+          errorMessage = "Er ontbreekt referentiedata. Neem contact op met support.";
+        } else {
+          errorMessage = `Fout: ${error.message}`;
+        }
+      }
+      
       toast({
         title: "Boeking mislukt",
-        description: "Er is een fout opgetreden bij het boeken van je rit. Probeer het opnieuw.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

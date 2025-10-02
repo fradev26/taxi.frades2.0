@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string | null
+          company_id: string | null
           vehicle_id: string | null
           pickup_address: string | null
           destination_address: string | null
@@ -20,17 +21,26 @@ export type Database = {
           pickup_lng: number | null
           destination_lat: number | null
           destination_lng: number | null
+          waypoints: Json | null
           scheduled_time: string | null
+          estimated_duration: number | null
+          estimated_distance: number | null
+          estimated_cost: number | null
+          final_cost: number | null
           status: string | null
           price: number | null
+          payment_status: string | null
           payment_method: string | null
+          payment_id: string | null
           vehicle_type: string | null
+          confirmation_sent: boolean | null
           created_at: string | null
           updated_at: string | null
         }
         Insert: {
           id?: string
           user_id?: string | null
+          company_id?: string | null
           vehicle_id?: string | null
           pickup_address?: string | null
           destination_address?: string | null
@@ -38,17 +48,26 @@ export type Database = {
           pickup_lng?: number | null
           destination_lat?: number | null
           destination_lng?: number | null
+          waypoints?: Json | null
           scheduled_time?: string | null
+          estimated_duration?: number | null
+          estimated_distance?: number | null
+          estimated_cost?: number | null
+          final_cost?: number | null
           status?: string | null
           price?: number | null
+          payment_status?: string | null
           payment_method?: string | null
+          payment_id?: string | null
           vehicle_type?: string | null
+          confirmation_sent?: boolean | null
           created_at?: string | null
           updated_at?: string | null
         }
         Update: {
           id?: string
           user_id?: string | null
+          company_id?: string | null
           vehicle_id?: string | null
           pickup_address?: string | null
           destination_address?: string | null
@@ -56,11 +75,19 @@ export type Database = {
           pickup_lng?: number | null
           destination_lat?: number | null
           destination_lng?: number | null
+          waypoints?: Json | null
           scheduled_time?: string | null
+          estimated_duration?: number | null
+          estimated_distance?: number | null
+          estimated_cost?: number | null
+          final_cost?: number | null
           status?: string | null
           price?: number | null
+          payment_status?: string | null
           payment_method?: string | null
+          payment_id?: string | null
           vehicle_type?: string | null
+          confirmation_sent?: boolean | null
           created_at?: string | null
           updated_at?: string | null
         }
