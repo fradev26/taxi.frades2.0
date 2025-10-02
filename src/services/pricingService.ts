@@ -273,23 +273,18 @@ export class PricingService {
   static validatePrice(breakdown: PriceBreakdown): {valid: boolean, warnings: string[]} {
     const warnings: string[] = [];
     
-    // Check if price is above reasonable maximum (€200)
-    if (breakdown.total > 200) {
-      warnings.push('Price unusually high - please verify route');
-    }
-    
-    // Check if price is at minimum fare
-    if (breakdown.subtotal === breakdown.minimum) {
-      warnings.push('Minimum fare applied');
+    // Only warn for extreme prices (over €500)
+    if (breakdown.total > 500) {
+      warnings.push('Controleer de route - ongewoon hoge prijs');
     }
     
     // Check if using estimated distance
     if (breakdown.estimatedOnly) {
-      warnings.push('Price is estimated - final price may vary based on actual route');
+      warnings.push('Prijs is geschat - definitieve prijs kan afwijken');
     }
     
     return {
-      valid: breakdown.total > 0 && breakdown.total < 500,
+      valid: breakdown.total > 0 && breakdown.total < 1000,
       warnings
     };
   }

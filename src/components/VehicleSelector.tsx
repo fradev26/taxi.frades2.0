@@ -1,6 +1,5 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check } from "lucide-react";
 import { STANDARD_VEHICLES, formatPrice } from "@/config/vehicles";
 import { cn } from "@/lib/utils";
 
@@ -28,60 +27,71 @@ export function VehicleSelector({
         Voertuig
       </h3>
       
-      <div className="flex gap-3 justify-center items-stretch">
+      <div className="flex flex-col gap-3 w-full">
         {STANDARD_VEHICLES.map((vehicle) => {
           const isSelected = selectedVehicle === vehicle.id;
           
           return (
             <div
               key={vehicle.id}
-              className="cursor-pointer rounded-lg text-center flex flex-col justify-center items-center"
+              className="cursor-pointer rounded-lg w-full flex items-center p-4"
               onClick={() => onVehicleSelect(vehicle.id)}
               style={{
                 backgroundColor: isSelected ? 'white' : 'black',
                 color: isSelected ? 'black' : 'white',
-                width: '120px',
-                height: '80px',
-                padding: '12px',
-                flex: '0 0 120px',
+                minHeight: '70px',
                 border: '1px solid transparent',
                 borderRadius: '8px',
                 transition: 'all 0.2s ease-in-out'
               }}
             >
               {/* Vehicle Icon */}
-              <div className="flex justify-center items-center" style={{ marginBottom: '4px' }}>
+              <div className="flex justify-center items-center mr-4">
                 <vehicle.icon 
                   style={{
-                    width: '20px',
-                    height: '20px',
+                    width: '28px',
+                    height: '28px',
                     color: isSelected ? 'black' : 'white'
                   }}
                 />
               </div>
 
               {/* Vehicle Info */}
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col justify-center flex-1">
                 <div 
                   style={{
                     color: isSelected ? 'black' : 'white',
-                    fontSize: '12px',
+                    fontSize: '16px',
                     fontWeight: '600',
                     lineHeight: '1.2',
-                    marginBottom: '2px',
-                    textAlign: 'center'
+                    marginBottom: '4px'
                   }}
                 >
                   {vehicle.name}
                 </div>
-                {showPricing && (
+                <div 
+                  style={{
+                    color: isSelected ? 'black' : 'white',
+                    fontSize: '13px',
+                    fontWeight: '400',
+                    lineHeight: '1.2',
+                    opacity: 0.8
+                  }}
+                >
+                  {vehicle.description}
+                </div>
+              </div>
+
+              {/* Pricing Info */}
+              {showPricing && (
+                <div className="flex items-center justify-end ml-4 min-w-[80px]">
                   <div 
                     style={{
                       color: isSelected ? 'black' : 'white',
-                      fontSize: '11px',
+                      fontSize: '14px',
                       fontWeight: '600',
                       lineHeight: '1.2',
-                      textAlign: 'center'
+                      textAlign: 'right'
                     }}
                   >
                     {bookingType === "hourly" 
@@ -89,8 +99,8 @@ export function VehicleSelector({
                       : `${formatPrice(vehicle.perKmRate)}/km`
                     }
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
         })}

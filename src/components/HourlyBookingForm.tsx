@@ -34,21 +34,10 @@ import { nl } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { VehicleSelector } from "@/components/VehicleSelector";
 import { STANDARD_VEHICLES } from "@/config/vehicles";
+import { initializeGoogleMaps, waitForGoogleMapsAPI, isGoogleMapsAPILoaded } from "@/utils/googleMaps";
+import { PAYMENT_METHODS } from "@/constants";
 
-// Payment methods
-const PAYMENT_METHODS = [
-  { value: 'direct', label: 'Direct betalen' },
-  { value: 'invoice', label: 'Later betalen (factuur)' }
-];
 
-// Time slots for selection
-const TIME_SLOTS = [
-  "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30",
-  "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
-  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-  "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30",
-  "22:00", "22:30", "23:00", "23:30"
-];
 
 interface Stopover {
   id: string;
@@ -86,7 +75,7 @@ export function HourlyBookingForm({
     startDate: null,
     startTime: "",
     pickupLocation: "",
-    stopovers: [],
+    stopovers: [], // Keep for backwards compatibility but hide UI
     vehicleType: "standard",
     paymentMethod: "direct",
     guestName: "",
@@ -97,6 +86,7 @@ export function HourlyBookingForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [recentLocations] = useState([
     "Brussels Airport (BRU)",
     "Brussels Central Station",
@@ -107,6 +97,13 @@ export function HourlyBookingForm({
 
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Reset payment method if user logs out and credit was selected
+  useEffect(() => {
+    if (!user && bookingData.paymentMethod === 'credit') {
+      setBookingData(prev => ({ ...prev, paymentMethod: 'direct' }));
+    }
+  }, [user, bookingData.paymentMethod]);
   const pickupInputRef = useRef<HTMLInputElement>(null);
 
   // Calculate total price
@@ -116,9 +113,9 @@ export function HourlyBookingForm({
     
     const basePrice = selectedVehicle.basePrice;
     const hourlyPrice = selectedVehicle.hourlyRate * bookingData.duration;
-    const stopoverSurcharge = bookingData.stopovers.length * 5; // €5 per stopover
+    // Removed stopover surcharge for simplification
     
-    return basePrice + hourlyPrice + stopoverSurcharge;
+    return basePrice + hourlyPrice;
   };
 
   // Add stopover
@@ -185,8 +182,8 @@ export function HourlyBookingForm({
       newErrors.duration = "Duur moet tussen 1 en 12 uur zijn";
     }
 
-    // Guest booking validation
-    if (!user && bookingData.paymentMethod === 'direct') {
+    // Guest booking validation - required for all payment methods except invoice
+    if (!user && bookingData.paymentMethod !== 'invoice') {
       if (!bookingData.guestName?.trim()) {
         newErrors.guestName = "Naam is verplicht";
       }
@@ -252,31 +249,65 @@ export function HourlyBookingForm({
     }
   };
 
-  // Get available time slots based on selected date
-  const getAvailableTimeSlots = () => {
-    if (!bookingData.startDate) return TIME_SLOTS;
-    
-    const isToday = bookingData.startDate.toDateString() === new Date().toDateString();
-    if (!isToday) return TIME_SLOTS;
-    
-    const currentHour = new Date().getHours();
-    const currentMinute = new Date().getMinutes();
-    
-    // Add 2 hours buffer for booking
-    const bufferTime = new Date();
-    bufferTime.setHours(currentHour + 2, currentMinute);
-    
-    return TIME_SLOTS.filter(time => {
-      const [hour, minute] = time.split(':').map(Number);
-      const timeSlot = new Date();
-      timeSlot.setHours(hour, minute);
-      return timeSlot >= bufferTime;
+  // Initialize Google Maps
+  useEffect(() => {
+    const setupGoogleMaps = async () => {
+      try {
+        // Load Google Maps API if not already loaded
+        if (!isGoogleMapsAPILoaded()) {
+          await initializeGoogleMaps();
+        }
+
+        // Wait for API to be ready
+        await waitForGoogleMapsAPI();
+        
+        setGoogleMapsLoaded(true);
+        setupAutocomplete();
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error);
+        toast({
+          title: "Google Maps niet beschikbaar",
+          description: "Kaart functionaliteit is beperkt. U kunt nog steeds handmatig adressen invoeren.",
+          variant: "default",
+        });
+      }
+    };
+
+    setupGoogleMaps();
+  }, []);
+
+  // Setup autocomplete for pickup location
+  const setupAutocomplete = () => {
+    if (!window.google || !pickupInputRef.current) return;
+
+    const pickupAutocomplete = new window.google.maps.places.Autocomplete(
+      pickupInputRef.current,
+      {
+        componentRestrictions: { country: "be" },
+        fields: ["formatted_address", "geometry", "name"]
+      }
+    );
+
+    pickupAutocomplete.addListener("place_changed", () => {
+      const place = pickupAutocomplete.getPlace();
+      if (place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        
+        setBookingData(prev => ({
+          ...prev,
+          pickupLocation: place.formatted_address || place.name || "",
+          pickupCoords: { lat, lng }
+        }));
+        
+        setShowLocationSuggestions(false);
+        setErrors(prev => ({ ...prev, pickupLocation: "" }));
+      }
     });
   };
 
   const selectedVehicle = STANDARD_VEHICLES.find(v => v.id === bookingData.vehicleType);
   const totalPrice = calculatePrice();
-  const availableTimeSlots = getAvailableTimeSlots();
 
   return (
     <form 
@@ -355,32 +386,19 @@ export function HourlyBookingForm({
                   <Clock className="w-4 h-4 inline mr-2" />
                   Time
                 </Label>
-                <Select
+                <Input
+                  id="time"
+                  type="time"
                   value={bookingData.startTime}
-                  onValueChange={(value) => setBookingData(prev => ({ ...prev, startTime: value }))}
-                >
-                  <SelectTrigger className={cn(
-                    "border-0 border-b border-border rounded-none px-0 focus:ring-0",
+                  onChange={(e) => {
+                    setBookingData(prev => ({ ...prev, startTime: e.target.value }));
+                    setErrors(prev => ({ ...prev, startTime: "" }));
+                  }}
+                  className={cn(
+                    "border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary",
                     errors.startTime && "border-destructive"
-                  )}>
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <ScrollArea className="h-60">
-                      {availableTimeSlots.length > 0 ? availableTimeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      )) : (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          Geen beschikbare tijden voor vandaag.
-                          <br />
-                          Kies een andere datum.
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </SelectContent>
-                </Select>
+                  )}
+                />
                 
                 {errors.startTime && (
                   <p className="text-sm text-destructive">{errors.startTime}</p>
@@ -568,7 +586,7 @@ export function HourlyBookingForm({
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map((method) => (
+                  {PAYMENT_METHODS.filter(method => user || method.value !== 'credit').map((method) => (
                     <SelectItem key={method.value} value={method.value}>
                       {method.label}
                     </SelectItem>
@@ -577,8 +595,8 @@ export function HourlyBookingForm({
               </Select>
             </div>
 
-            {/* Guest Information - only show for direct payment when not logged in */}
-            {!user && bookingData.paymentMethod === 'direct' && (
+            {/* Guest Information - only show when not logged in and not using invoice */}
+            {!user && bookingData.paymentMethod !== 'invoice' && (
               <div className="space-y-4">
                 <Label className="text-sm text-muted-foreground">Guest Information</Label>
                 <div className="space-y-4">

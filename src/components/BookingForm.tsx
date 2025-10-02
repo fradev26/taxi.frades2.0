@@ -86,20 +86,29 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
   const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   
+  // Form refs
+  const pickupInputRef = useRef<HTMLInputElement>(null);
+  const destinationInputRef = useRef<HTMLInputElement>(null);
+  const stopoverRefs = useRef<React.RefObject<HTMLInputElement>[]>([]);
+  const mapRef = useRef<HTMLDivElement>(null);
+  
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Reset payment method if user logs out and credit was selected
+  useEffect(() => {
+    if (!user && formData.paymentMethod === 'credit') {
+      updateFormData('paymentMethod', 'direct');
+    }
+  }, [user, formData.paymentMethod]);
+  
   // Pricing state
   const [priceBreakdown, setPriceBreakdown] = useState<PriceBreakdown | null>(null);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
   const [distanceResult, setDistanceResult] = useState<DistanceResult | null>(null);
   
-  const pickupInputRef = useRef<HTMLInputElement>(null);
-  const destinationInputRef = useRef<HTMLInputElement>(null);
   const stopoverInputRef = useRef<HTMLInputElement>(null);
-  const stopoverRefs = useRef<React.RefObject<HTMLInputElement>[]>([]);
-  const mapRef = useRef<HTMLDivElement>(null);
-  
-  const { toast } = useToast();
-  const { user } = useAuth();
 
   // Stopover management functions
   const addStopover = () => {
@@ -821,11 +830,11 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
 
       setPriceBreakdown(breakdown);
 
-      // Show warning if price seems high
+      // Only show warnings for extreme prices (over €500)
       const validation = PricingService.validatePrice(breakdown);
-      if (validation.warnings.length > 0) {
+      if (validation.warnings.length > 0 && breakdown.total > 500) {
         toast({
-          title: "Prijsmelding",
+          title: "Prijscontrole",
           description: validation.warnings[0],
           variant: "default",
         });
@@ -919,19 +928,19 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Check if user is logged in or if it's direct payment (guest booking)
-    if (!user && formData.paymentMethod !== 'direct') {
+    // Check if user is logged in - only invoice payment requires login
+    if (!user && formData.paymentMethod === 'invoice') {
       toast({
         title: "Inloggen vereist",
-        description: "Je moet ingelogd zijn om een rit te boeken, of kies voor Direct Payment.",
+        description: "Log in om een factuur te kunnen aanvragen.",
         variant: "destructive",
       });
       setIsSubmitting(false);
       return;
     }
 
-    // Handle guest booking for direct payment
-    if (!user && formData.paymentMethod === 'direct') {
+    // Handle guest booking (all payment methods except invoice)
+    if (!user && formData.paymentMethod !== 'invoice') {
       return handleGuestBooking();
     }
 
@@ -1095,101 +1104,6 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
             />
           </div>
 
-          {/* Multiple Stopovers Field */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                <span>Tussenstops</span>
-              </div>
-              <AddStopoverButton
-                onClick={addStopover}
-                disabled={isSubmitting}
-                loading={false}
-                maxReached={formData.stopovers.length >= 5}
-              />
-            </div>
-            
-            {/* Render existing stopovers */}
-            {formData.stopovers.map((stopover, index) => {
-              // Ensure we have a ref for this stopover
-              if (!stopoverRefs.current[index]) {
-                stopoverRefs.current[index] = React.createRef<HTMLInputElement>();
-              }
-              
-              return (
-                <div key={stopover.id} className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0"></div>
-                    <span className="flex-shrink-0">{index + 1}</span>
-                  </div>
-                  <Input
-                    ref={stopoverRefs.current[index]}
-                    placeholder={`Tussenstop ${index + 1}`}
-                    value={stopover.address}
-                    onChange={(e) => updateStopover(stopover.id, { address: e.target.value })}
-                    onKeyDown={(e) => {
-                      // Ensure spaces work properly in input
-                      if (e.key === ' ') {
-                        e.stopPropagation();
-                      }
-                    }}
-                    className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeStopover(stopover.id)}
-                    className="text-xs h-6 w-6 p-0 flex-shrink-0"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              );
-            })}
-
-            {/* Legacy stopover for backwards compatibility */}
-            {showStopover && formData.stopovers.length === 0 && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0"></div>
-                  <span className="flex-shrink-0">1</span>
-                </div>
-                <Input
-                  ref={stopoverInputRef}
-                  placeholder="Tussenstop"
-                  value={formData.stopover}
-                  onChange={(e) => updateFormData('stopover', e.target.value)}
-                  onKeyDown={(e) => {
-                    // Ensure spaces work properly in input
-                    if (e.key === ' ') {
-                      e.stopPropagation();
-                    }
-                  }}
-                  className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowStopover(false);
-                    setFormData(prev => ({ ...prev, stopover: "" }));
-                    if (stopoverMarker) {
-                      stopoverMarker.setMap(null);
-                      setStopoverMarker(null);
-                    }
-                    if (map) updateRoute(map);
-                  }}
-                  className="text-xs h-6 w-6 p-0 flex-shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-
           {/* To Field */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1263,7 +1177,7 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
                 <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent>
-                {PAYMENT_METHODS.map((method) => (
+                {PAYMENT_METHODS.filter(method => user || method.value !== 'credit').map((method) => (
                   <SelectItem key={method.value} value={method.value}>
                     {method.label}
                   </SelectItem>
@@ -1293,8 +1207,8 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
             />
           </div>
 
-          {/* Guest Information - only show for direct payment when not logged in */}
-          {!user && formData.paymentMethod === 'direct' && (
+          {/* Guest Information - show when not logged in and not using invoice */}
+          {!user && formData.paymentMethod !== 'invoice' && (
             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border-l-4 border-primary">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Info className="w-4 h-4" />
@@ -1408,14 +1322,14 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
               disabled={isSubmitting || isCalculatingPrice}
             >
               {isSubmitting 
-                ? (!user && formData.paymentMethod === 'direct' ? "Processing payment..." : "Booking...") 
+                ? (!user && formData.paymentMethod !== 'invoice' ? "Processing payment..." : "Booking...") 
                 : isCalculatingPrice
                 ? "Calculating price..."
                 : priceBreakdown 
-                ? (!user && formData.paymentMethod === 'direct' 
+                ? (!user && formData.paymentMethod !== 'invoice' 
                    ? `Pay ${priceBreakdown.total.toLocaleString('nl-NL', {style: 'currency', currency: 'EUR'})} & Book` 
                    : `Book Ride - ${priceBreakdown.total.toLocaleString('nl-NL', {style: 'currency', currency: 'EUR'})}`)
-                : (!user && formData.paymentMethod === 'direct' ? "Pay & Book Ride" : "Book Ride")
+                : (!user && formData.paymentMethod !== 'invoice' ? "Pay & Book Ride" : "Book Ride")
               }
             </Button>
             {showCancelButton && (

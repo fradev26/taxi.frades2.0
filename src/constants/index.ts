@@ -30,9 +30,9 @@ export const TRIP_STATUS = {
 } as const;
 
 export const PAYMENT_METHODS = [
-  { value: 'direct', label: 'Direct Payment' },
-  { value: 'credit', label: 'Credit' },
-  { value: 'invoice', label: 'Invoice' },
+  { value: 'direct', label: 'Direct betalen' },
+  { value: 'credit', label: 'Wallet tegoed' },
+  { value: 'invoice', label: 'Later betalen (factuur)' },
 ] as const;
 
 export const VEHICLE_TYPES = {

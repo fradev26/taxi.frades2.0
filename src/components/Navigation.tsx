@@ -15,12 +15,10 @@ export function Navigation() {
   // Header navigation items - only show Boeken and Login/Account
   const headerNavigationItems = user
     ? [
-        { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock }
+        { label: "Boeken", path: ROUTES.HOME, icon: Car }
       ]
     : [
         { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock },
         { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
       ];
 
@@ -28,14 +26,12 @@ export function Navigation() {
   const mobileNavigationItems = user
     ? [
         { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock },
         { label: "Wallet", path: ROUTES.WALLET, icon: Wallet },
         { label: "Account", path: ROUTES.ACCOUNT, icon: User },
         ...(isAdmin ? [{ label: "Admin", path: ROUTES.ADMIN, icon: Settings }] : [])
       ]
     : [
         { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Per uur", path: `${ROUTES.HOME}?tab=hourly`, icon: Clock },
         { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
       ];
 
@@ -48,8 +44,12 @@ export function Navigation() {
       return location.pathname === basePath && currentTab === expectedTab;
     }
     
-    if (path === ROUTES.HOME && location.pathname === ROUTES.HOME && !location.search.includes('tab=')) return true;
+    // For the "Boeken" button (ROUTES.HOME), show as active when on home page (with or without tabs)
+    if (path === ROUTES.HOME && location.pathname === ROUTES.HOME) return true;
+    
+    // For other paths, check if current path starts with the item path
     if (path !== ROUTES.HOME && location.pathname.startsWith(path)) return true;
+    
     return false;
   };
 
@@ -112,14 +112,10 @@ export function Navigation() {
           {mobileNavigationItems.map((item) => (
             <Button
               key={item.path}
-              variant="ghost"
+              variant={isActive(item.path) ? "taxi-primary" : "taxi-ghost"}
               size="sm"
               onClick={() => navigate(item.path)}
-              className={`flex-col gap-1 h-16 ${
-                isActive(item.path)
-                  ? "text-primary bg-accent-green/10"
-                  : "text-muted-foreground"
-              }`}
+              className="flex-col gap-1 h-16"
             >
               <item.icon className="w-5 h-5" />
               <span className="text-xs">{item.label}</span>

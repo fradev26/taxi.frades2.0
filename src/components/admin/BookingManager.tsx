@@ -191,18 +191,20 @@ export function BookingManager() {
                   Boeking toevoegen
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Nieuwe boeking toevoegen</DialogTitle>
                 </DialogHeader>
-                <BookingForm
-                  onBookingSuccess={() => {
-                    setIsBookingDialogOpen(false);
-                    loadBookings();
-                  }}
-                  onBookingCancel={() => setIsBookingDialogOpen(false)}
-                  showCancelButton={true}
-                />
+                <div className="max-h-[75vh] overflow-y-auto p-1">
+                  <BookingForm
+                    onBookingSuccess={() => {
+                      setIsBookingDialogOpen(false);
+                      loadBookings();
+                    }}
+                    onBookingCancel={() => setIsBookingDialogOpen(false)}
+                    showCancelButton={true}
+                  />
+                </div>
               </DialogContent>
             </Dialog>
             <Select value={statusFilter} onValueChange={setStatusFilter}>

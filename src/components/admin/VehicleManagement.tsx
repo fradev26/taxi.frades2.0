@@ -12,6 +12,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Car, Plus, CreditCard as Edit, Trash2, MapPin } from "lucide-react";
 import { typedSupabase } from "@/lib/supabase-typed";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { STANDARD_VEHICLES } from "@/config/vehicles";
 
@@ -67,8 +68,9 @@ export function VehicleManagement() {
   const loadVehicles = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await typedSupabase.vehicles
-        .select()
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -150,8 +152,10 @@ export function VehicleManagement() {
 
       if (editingVehicle) {
         // Update existing vehicle
-        const { error } = await typedSupabase.vehicles
-          .update(editingVehicle.id, vehicleData);
+        const { error } = await supabase
+          .from('vehicles')
+          .update(vehicleData)
+          .eq('id', editingVehicle.id);
 
         if (error) throw error;
 
@@ -161,7 +165,8 @@ export function VehicleManagement() {
         });
       } else {
         // Create new vehicle
-        const { error } = await typedSupabase.vehicles
+        const { error } = await supabase
+          .from('vehicles')
           .insert([vehicleData]);
 
         if (error) throw error;
@@ -190,8 +195,10 @@ export function VehicleManagement() {
   // Delete vehicle
   const handleDeleteVehicle = async (vehicle: Vehicle) => {
     try {
-      const { error } = await typedSupabase.vehicles
-        .delete(vehicle.id);
+      const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', vehicle.id);
 
       if (error) throw error;
 
@@ -214,12 +221,13 @@ export function VehicleManagement() {
   // Toggle vehicle availability
   const toggleAvailability = async (vehicle: Vehicle) => {
     try {
-      const newAvailability = !(vehicle.available ?? false);
-      const { error } = await typedSupabase.vehicles
-        .update(vehicle.id, { 
-          available: newAvailability,
+      const { error } = await supabase
+        .from('vehicles')
+        .update({ 
+          available: !vehicle.available,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', vehicle.id);
 
       if (error) throw error;
 

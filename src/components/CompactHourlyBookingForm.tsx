@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,14 +31,8 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants";
 import { VehicleSelector } from "@/components/VehicleSelector";
 import { STANDARD_VEHICLES } from "@/config/vehicles";
-
-
-
-// Simplified time slots
-const TIME_SLOTS = [
-  "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", 
-  "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
-];
+import { initializeGoogleMaps, waitForGoogleMapsAPI, isGoogleMapsAPILoaded } from "@/utils/googleMaps";
+import { PAYMENT_METHODS } from "@/constants";
 
 interface CompactHourlyBookingData {
   duration: number;
@@ -46,6 +40,10 @@ interface CompactHourlyBookingData {
   startTime: string;
   pickupLocation: string;
   vehicleType: string;
+  paymentMethod: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
 }
 
 export function CompactHourlyBookingForm() {
@@ -54,15 +52,24 @@ export function CompactHourlyBookingForm() {
     startDate: null,
     startTime: "",
     pickupLocation: "",
-    vehicleType: "standard"
+    vehicleType: "standard",
+    paymentMethod: "direct"
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Reset payment method if user logs out and credit was selected
+  useEffect(() => {
+    if (!user && bookingData.paymentMethod === 'credit') {
+      setBookingData(prev => ({ ...prev, paymentMethod: 'direct' }));
+    }
+  }, [user, bookingData.paymentMethod]);
   const navigate = useNavigate();
   const pickupInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,17 +89,46 @@ export function CompactHourlyBookingForm() {
     return basePrice + hourlyPrice;
   };
 
-  // Get available time slots
-  const getAvailableTimeSlots = () => {
-    if (!bookingData.startDate) return TIME_SLOTS;
-    
-    const isToday = bookingData.startDate.toDateString() === new Date().toDateString();
-    if (!isToday) return TIME_SLOTS;
-    
-    const currentHour = new Date().getHours();
-    return TIME_SLOTS.filter(time => {
-      const hour = parseInt(time.split(':')[0]);
-      return hour > currentHour + 1; // 2 hour buffer
+  // Initialize Google Maps
+  useEffect(() => {
+    const setupGoogleMaps = async () => {
+      try {
+        if (!isGoogleMapsAPILoaded()) {
+          await initializeGoogleMaps();
+        }
+        await waitForGoogleMapsAPI();
+        setGoogleMapsLoaded(true);
+        setupAutocomplete();
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error);
+      }
+    };
+
+    setupGoogleMaps();
+  }, []);
+
+  // Setup autocomplete for pickup location
+  const setupAutocomplete = () => {
+    if (!window.google || !pickupInputRef.current) return;
+
+    const pickupAutocomplete = new window.google.maps.places.Autocomplete(
+      pickupInputRef.current,
+      {
+        componentRestrictions: { country: "be" },
+        fields: ["formatted_address", "geometry", "name"]
+      }
+    );
+
+    pickupAutocomplete.addListener("place_changed", () => {
+      const place = pickupAutocomplete.getPlace();
+      if (place.geometry && place.geometry.location) {
+        setBookingData(prev => ({
+          ...prev,
+          pickupLocation: place.formatted_address || place.name || ""
+        }));
+        setShowLocationSuggestions(false);
+        setErrors(prev => ({ ...prev, pickupLocation: "" }));
+      }
     });
   };
 
@@ -112,6 +148,21 @@ export function CompactHourlyBookingForm() {
 
     if (!bookingData.startTime) {
       newErrors.startTime = "Starttijd is verplicht";
+    }
+
+    // Guest booking validation - required for all payment methods except invoice
+    if (!user && bookingData.paymentMethod !== 'invoice') {
+      if (!bookingData.guestName?.trim()) {
+        newErrors.guestName = "Naam is verplicht";
+      }
+      if (!bookingData.guestEmail?.trim()) {
+        newErrors.guestEmail = "Email is verplicht";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingData.guestEmail)) {
+        newErrors.guestEmail = "Ongeldig email adres";
+      }
+      if (!bookingData.guestPhone?.trim()) {
+        newErrors.guestPhone = "Telefoonnummer is verplicht";
+      }
     }
 
     setErrors(newErrors);
@@ -139,14 +190,29 @@ export function CompactHourlyBookingForm() {
       
       const totalPrice = calculatePrice();
       
+      // Check if user is logged in - only invoice payment requires login
+      if (!user && bookingData.paymentMethod === 'invoice') {
+        toast({
+          title: "Inloggen vereist",
+          description: "Log in om een factuur te kunnen aanvragen.",
+        });
+        navigate(`${ROUTES.LOGIN}?redirect=${encodeURIComponent(window.location.pathname)}`);
+        return;
+      }
+      
       toast({
-        title: "Boeking succesvol!",
-        description: `Uw ${bookingData.duration} uur durende rit is geboekt voor €${totalPrice}.`,
+        title: "Doorverwijzing naar betaling",
+        description: `Uw ${bookingData.duration} uur durende rit - €${totalPrice}`,
       });
 
-      // Navigate to full hourly booking page with pre-filled data
-      navigate(`${ROUTES.HOURLY_BOOKING}?prefill=true`, {
-        state: { bookingData, totalPrice }
+      // Navigate directly to payment/wallet page with booking data
+      navigate(`${ROUTES.WALLET}?payment=true`, {
+        state: { 
+          bookingType: 'hourly',
+          bookingData, 
+          totalPrice,
+          paymentAmount: totalPrice
+        }
       });
     } catch (error) {
       toast({
@@ -161,7 +227,6 @@ export function CompactHourlyBookingForm() {
 
   const selectedVehicle = STANDARD_VEHICLES.find(v => v.id === bookingData.vehicleType);
   const totalPrice = calculatePrice();
-  const availableTimeSlots = getAvailableTimeSlots();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -224,27 +289,12 @@ export function CompactHourlyBookingForm() {
       {/* Time Selection */}
       <div className="space-y-2">
         <Label className="text-sm font-medium">Starttijd</Label>
-        <Select
+        <Input
+          type="time"
           value={bookingData.startTime}
-          onValueChange={(value) => setBookingData(prev => ({ ...prev, startTime: value }))}
-        >
-          <SelectTrigger className={cn(errors.startTime && "border-destructive")}>
-            <SelectValue placeholder="Selecteer tijd" />
-          </SelectTrigger>
-          <SelectContent>
-            <ScrollArea className="h-40">
-              {availableTimeSlots.length > 0 ? availableTimeSlots.map((time) => (
-                <SelectItem key={time} value={time}>
-                  {time}
-                </SelectItem>
-              )) : (
-                <div className="p-4 text-center text-xs text-muted-foreground">
-                  Geen tijden beschikbaar
-                </div>
-              )}
-            </ScrollArea>
-          </SelectContent>
-        </Select>
+          onChange={(e) => setBookingData(prev => ({ ...prev, startTime: e.target.value }))}
+          className={cn(errors.startTime && "border-destructive")}
+        />
         {errors.startTime && (
           <p className="text-xs text-destructive">{errors.startTime}</p>
         )}
@@ -312,6 +362,74 @@ export function CompactHourlyBookingForm() {
         bookingType="hourly"
       />
 
+      {/* Payment Method */}
+      <div className="space-y-2">
+        <Label className="text-sm text-muted-foreground">Payment Method</Label>
+        <Select value={bookingData.paymentMethod} onValueChange={(value) => setBookingData(prev => ({ ...prev, paymentMethod: value }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select payment method" />
+          </SelectTrigger>
+          <SelectContent>
+            {PAYMENT_METHODS.filter(method => user || method.value !== 'credit').map((method) => (
+              <SelectItem key={method.value} value={method.value}>
+                {method.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Guest Information - only show when not logged in and not using invoice */}
+      {!user && bookingData.paymentMethod !== 'invoice' && (
+        <div className="space-y-4">
+          <Label className="text-sm text-muted-foreground">Guest Information</Label>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 p-4 border rounded-lg">
+              <div className="space-y-2">
+                <Label>Naam *</Label>
+                <Input
+                  placeholder="Uw volledige naam"
+                  value={bookingData.guestName || ''}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, guestName: e.target.value }))}
+                  className={cn(errors.guestName && "border-destructive")}
+                />
+                {errors.guestName && (
+                  <p className="text-sm text-destructive">{errors.guestName}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  placeholder="uw.email@voorbeeld.com"
+                  value={bookingData.guestEmail || ''}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, guestEmail: e.target.value }))}
+                  className={cn(errors.guestEmail && "border-destructive")}
+                />
+                {errors.guestEmail && (
+                  <p className="text-sm text-destructive">{errors.guestEmail}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Telefoon *</Label>
+                <Input
+                  type="tel"
+                  placeholder="+32 123 456 789"
+                  value={bookingData.guestPhone || ''}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, guestPhone: e.target.value }))}
+                  className={cn(errors.guestPhone && "border-destructive")}
+                />
+                {errors.guestPhone && (
+                  <p className="text-sm text-destructive">{errors.guestPhone}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Price Display */}
       <div className="bg-primary/5 rounded-lg p-3 space-y-2">
         <div className="flex items-center justify-between">
@@ -323,17 +441,7 @@ export function CompactHourlyBookingForm() {
         </div>
       </div>
 
-      {/* Advanced Options Button */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-full text-xs"
-        onClick={() => navigate(ROUTES.HOURLY_BOOKING)}
-      >
-        <Plus className="h-3 w-3 mr-1" />
-        Meer opties (tussenstops, gast boeking)
-      </Button>
+
 
       {/* Submit Button */}
       <Button
