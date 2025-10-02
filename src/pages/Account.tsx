@@ -159,28 +159,14 @@ export default function Account() {
     );
   }
 
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md mx-auto">
-            <CardContent className="text-center pt-6">
-              <h1 className="text-2xl font-bold mb-4">Profiel niet gevonden</h1>
-              <p className="text-muted-foreground mb-4">
-                Er kon geen profiel worden gevonden voor uw account.
-              </p>
-              <Button onClick={() => navigate("/login")}>
-                Terug naar login
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  // Enable editing mode by default if no profile exists
+  useEffect(() => {
+    if (!isLoading && userProfile === null) {
+      setIsEditing(true);
+    }
+  }, [isLoading, userProfile]);
 
-  const isBusinessAccount = userProfile.company_name || userProfile.btw_number;
+  const isBusinessAccount = userProfile?.company_name || userProfile?.btw_number;
 
   return (
     <div className="min-h-screen bg-background">
@@ -288,7 +274,7 @@ export default function Account() {
                     <Input
                       id="email"
                       type="email"
-                      value={userProfile.email}
+                      value={userProfile?.email || user?.email || ''}
                       disabled={true}
                       className="pl-10 bg-muted"
                     />

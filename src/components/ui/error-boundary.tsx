@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -11,6 +12,7 @@ interface ErrorBoundaryState {
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<{ error?: Error; resetError: () => void }>;
+  isAdmin?: boolean;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -38,14 +40,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return <FallbackComponent error={this.state.error} resetError={this.resetError} />;
       }
 
-      return <DefaultErrorFallback error={this.state.error} resetError={this.resetError} />;
+      return <DefaultErrorFallback error={this.state.error} resetError={this.resetError} isAdmin={this.props.isAdmin} />;
     }
 
     return this.props.children;
   }
 }
 
-function DefaultErrorFallback({ error, resetError }: { error?: Error; resetError: () => void }) {
+function DefaultErrorFallback({ error, resetError, isAdmin }: { error?: Error; resetError: () => void; isAdmin?: boolean }) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -57,8 +59,14 @@ function DefaultErrorFallback({ error, resetError }: { error?: Error; resetError
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-muted-foreground">
-            {error?.message || 'Er is een onverwachte fout opgetreden.'}
+            {isAdmin && error?.message ? error.message : 'Er is een onverwachte fout opgetreden.'}
           </p>
+          {isAdmin && error?.stack && (
+            <details className="text-left text-xs bg-muted p-3 rounded-md mt-4">
+              <summary className="cursor-pointer font-semibold mb-2">Technische details (alleen voor admins)</summary>
+              <pre className="whitespace-pre-wrap overflow-auto max-h-40">{error.stack}</pre>
+            </details>
+          )}
           <Button onClick={resetError} className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Probeer opnieuw
@@ -66,5 +74,15 @@ function DefaultErrorFallback({ error, resetError }: { error?: Error; resetError
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Wrapper component to pass isAdmin prop
+export function ErrorBoundaryWithAuth({ children, fallback }: ErrorBoundaryProps) {
+  const { isAdmin } = useAuth();
+  return (
+    <ErrorBoundary isAdmin={isAdmin} fallback={fallback}>
+      {children}
+    </ErrorBoundary>
   );
 }

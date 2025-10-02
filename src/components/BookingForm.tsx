@@ -40,6 +40,7 @@ interface BookingFormProps {
   onBookingSuccess?: () => void;
   onBookingCancel?: () => void;
   showCancelButton?: boolean;
+  initialShowMap?: boolean;
 }
 
 // Helper function to validate coordinates
@@ -54,7 +55,7 @@ const validateCoordinates = (lat: any, lng: any): { lat: number; lng: number } |
   return { lat: numLat, lng: numLng };
 };
 
-export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButton = false }: BookingFormProps) {
+export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButton = false, initialShowMap = true }: BookingFormProps) {
   const [formData, setFormData] = useState<BookingFormData>({
     pickup: "",
     destination: "",
@@ -76,7 +77,7 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
-  const [showMap, setShowMap] = useState(true);
+  const [showMap, setShowMap] = useState(initialShowMap);
   const [isGuestBooking, setIsGuestBooking] = useState(false);
   const [map, setMap] = useState<any>(null);
   const [pickupMarker, setPickupMarker] = useState<any>(null);

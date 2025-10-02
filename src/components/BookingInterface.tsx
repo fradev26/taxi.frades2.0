@@ -65,7 +65,7 @@ export function BookingInterface({ className = "" }: BookingInterfaceProps) {
             </TabsTrigger>
           </TabsList>
           
-          <div className="max-h-[75vh] overflow-y-auto">
+          <div className="max-h-[75vh] md:overflow-y-auto overflow-y-visible">
             <TabsContent value="ride" className="mt-0 focus-visible:outline-none">
               <div className="p-6">
                 <BookingForm showCancelButton={false} />
