@@ -13,6 +13,7 @@ export const ROUTES = {
   ACCOUNT: '/account',
   ADMIN: '/admin',
   HOURLY_BOOKING: '/hourly-booking',
+  BUSINESS_TAX_PROFILE: '/belasting-profiel-zakelijk',
   PRIVACY_POLICY: '/privacy-policy',
   COOKIE_POLICY: '/cookie-policy',
   TERMS_OF_SERVICE: '/terms-of-service',
