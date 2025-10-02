@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { ErrorBoundary, ErrorBoundaryWithAuth } from "@/components/ui/error-boundary";
 import { ROUTES } from "@/constants";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -21,16 +21,19 @@ import TermsOfService from "./pages/TermsOfService";
 import SalesTerms from "./pages/SalesTerms";
 import LegalInfo from "./pages/LegalInfo";
 import SiteMap from "./pages/SiteMap";
+import OverOns from "./pages/OverOns";
+import VoorBedrijven from "./pages/VoorBedrijven";
+import BelastingProfielZakelijk from "./pages/BelastingProfielZakelijk";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" attribute="class">
-        <TooltipProvider>
-          <AuthProvider>
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider defaultTheme="system" attribute="class">
+      <TooltipProvider>
+        <AuthProvider>
+          <ErrorBoundaryWithAuth>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -49,15 +52,18 @@ const App = () => (
                 <Route path={ROUTES.SALES_TERMS} element={<SalesTerms />} />
                 <Route path={ROUTES.LEGAL_INFO} element={<LegalInfo />} />
                 <Route path={ROUTES.SITE_MAP} element={<SiteMap />} />
+                <Route path={ROUTES.OVER_ONS} element={<OverOns />} />
+                <Route path={ROUTES.VOOR_BEDRIJVEN} element={<VoorBedrijven />} />
+                <Route path={ROUTES.BELASTING_PROFIEL_ZAKELIJK} element={<BelastingProfielZakelijk />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </AuthProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
+          </ErrorBoundaryWithAuth>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
 );
 
 export default App;

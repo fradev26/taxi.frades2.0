@@ -202,6 +202,7 @@ export function BookingManager() {
                   }}
                   onBookingCancel={() => setIsBookingDialogOpen(false)}
                   showCancelButton={true}
+                  initialShowMap={false}
                 />
               </DialogContent>
             </Dialog>

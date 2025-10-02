@@ -19,6 +19,9 @@ export const ROUTES = {
   SALES_TERMS: '/sales-terms',
   LEGAL_INFO: '/legal-info',
   SITE_MAP: '/site-map',
+  OVER_ONS: '/over-ons',
+  VOOR_BEDRIJVEN: '/voor-bedrijven',
+  BELASTING_PROFIEL_ZAKELIJK: '/belasting-profiel-zakelijk',
 } as const;
 
 export const TRIP_STATUS = {

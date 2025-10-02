@@ -68,11 +68,21 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="taxi-primary" size="lg" className="text-lg px-8">
+                <Button 
+                  variant="taxi-primary" 
+                  size="lg" 
+                  className="text-lg px-8"
+                  onClick={() => window.location.href = '/over-ons'}
+                >
                   <Car className="w-5 h-5 mr-2" />
                   Meer informatie
                 </Button>
-                <Button variant="taxi-outline" size="lg" className="text-lg px-8 border-white text-white hover:bg-white hover:text-black">
+                <Button 
+                  variant="taxi-outline" 
+                  size="lg" 
+                  className="text-lg px-8 border-white text-white hover:bg-white hover:text-black"
+                  onClick={() => window.location.href = '/voor-bedrijven'}
+                >
                   <Users className="w-5 h-5 mr-2" />
                   Voor bedrijven
                 </Button>
@@ -99,10 +109,20 @@ const Index = () => {
               Nieuwe gebruikers krijgen €10 korting!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="taxi-primary" size="lg" className="text-lg px-8">
+              <Button 
+                variant="taxi-primary" 
+                size="lg" 
+                className="text-lg px-8"
+                onClick={() => window.location.href = '/login'}
+              >
                 Account aanmaken
               </Button>
-              <Button variant="taxi-outline" size="lg" className="text-lg px-8">
+              <Button 
+                variant="taxi-outline" 
+                size="lg" 
+                className="text-lg px-8"
+                onClick={() => window.location.href = '/over-ons'}
+              >
                 Meer informatie
               </Button>
             </div>
