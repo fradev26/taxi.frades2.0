@@ -778,6 +778,141 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     }
   };
 
+  // Auto-fill current date
+  const fillCurrentDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    updateFormData('date', today);
+    toast({
+      title: "Datum ingevuld",
+      description: "Huidige datum is automatisch ingevuld",
+    });
+  };
+
+  // Auto-fill current time (rounded to next 15 minutes)
+  const fillCurrentTime = () => {
+    const now = new Date();
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    now.setMinutes(roundedMinutes);
+    now.setSeconds(0);
+    
+    const timeString = now.toTimeString().slice(0, 5);
+    updateFormData('time', timeString);
+    toast({
+      title: "Tijd ingevuld",
+      description: "Huidige tijd is automatisch ingevuld",
+    });
+  };
+
+  // Auto-fill current location using browser geolocation
+  const fillCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Niet ondersteund",
+        description: "Geolocatie wordt niet ondersteund door uw browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Locatie ophalen...",
+      description: "Uw huidige locatie wordt opgehaald",
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Use Google Maps Geocoding to get address from coordinates
+        if (window.google && window.google.maps) {
+          const geocoder = new window.google.maps.Geocoder();
+          const latlng = { lat: latitude, lng: longitude };
+          
+          geocoder.geocode({ location: latlng }, (results: any, status: any) => {
+            if (status === 'OK' && results && results[0]) {
+              updateFormData('pickup', results[0].formatted_address);
+              setFormData(prev => ({
+                ...prev,
+                pickup: results[0].formatted_address,
+                pickupLat: latitude,
+                pickupLng: longitude,
+              }));
+
+              // Update map marker
+              if (map) {
+                if (pickupMarker) {
+                  pickupMarker.setMap(null);
+                }
+                const newMarker = new window.google.maps.Marker({
+                  position: latlng,
+                  map: map,
+                  title: "Huidige locatie",
+                  icon: {
+                    path: window.google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: "#10b981",
+                    fillOpacity: 1,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 2,
+                  }
+                });
+                setPickupMarker(newMarker);
+                map.setCenter(latlng);
+                map.setZoom(15);
+              }
+
+              toast({
+                title: "Locatie ingevuld",
+                description: "Uw huidige locatie is ingevuld als ophaallocatie",
+              });
+            } else {
+              toast({
+                title: "Fout",
+                description: "Kon adres niet ophalen van locatie",
+                variant: "destructive",
+              });
+            }
+          });
+        } else {
+          // Fallback: just set coordinates
+          setFormData(prev => ({
+            ...prev,
+            pickup: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            pickupLat: latitude,
+            pickupLng: longitude,
+          }));
+          
+          toast({
+            title: "Locatie ingevuld",
+            description: "Coördinaten zijn ingevuld (adres kon niet worden opgehaald)",
+          });
+        }
+      },
+      (error) => {
+        let message = "Kon locatie niet ophalen";
+        if (error.code === 1) {
+          message = "Geolocatie toegang geweigerd. Sta locatietoegang toe in uw browserinstellingen.";
+        } else if (error.code === 2) {
+          message = "Locatie niet beschikbaar";
+        } else if (error.code === 3) {
+          message = "Locatie opvragen time-out";
+        }
+        
+        toast({
+          title: "Fout bij locatie ophalen",
+          description: message,
+          variant: "destructive",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
   // Calculate price based on current form data
   const calculatePrice = async () => {
     // Only calculate if we have pickup and destination
@@ -1085,9 +1220,21 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
     >
           {/* From Field */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <div className="w-2 h-2 bg-accent-green rounded-full"></div>
-          <span>From</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-2 h-2 bg-accent-green rounded-full"></div>
+                <span>From</span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={fillCurrentLocation}
+                className="text-xs h-7"
+              >
+                <MapPin className="w-3 h-3 mr-1" />
+                Huidige locatie
+              </Button>
             </div>
             <Input
           ref={pickupInputRef}
@@ -1131,10 +1278,21 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Date Field */}
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4 inline mr-2" />
-                Date
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="date" className="text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4 inline mr-2" />
+                  Date
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={fillCurrentDate}
+                  className="text-xs h-7"
+                >
+                  Vandaag
+                </Button>
+              </div>
               <Input
                 id="date"
                 type="date"
@@ -1147,10 +1305,21 @@ export function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButto
 
             {/* Time Field */}
             <div className="space-y-2">
-              <Label htmlFor="time" className="text-sm text-muted-foreground">
-                <Clock className="w-4 h-4 inline mr-2" />
-                Time
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="time" className="text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4 inline mr-2" />
+                  Time
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={fillCurrentTime}
+                  className="text-xs h-7"
+                >
+                  Nu
+                </Button>
+              </div>
               <Input
                 id="time"
                 type="time"
