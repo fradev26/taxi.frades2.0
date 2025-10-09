@@ -16,7 +16,8 @@ declare module '@supabase/supabase-js' {
   }
 }
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useBookings, useUpdateBookingStatus } from "@/hooks/useBookings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,76 +78,39 @@ const paymentStatusOptions = [
 ];
 
 export function BookingManager() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+
+  // Use optimized React Query hooks
+  const { 
+    data: bookings = [], 
+    isLoading, 
+    error: bookingsError,
+    refetch: refetchBookings 
+  } = useBookings({ 
+    status: statusFilter, 
+    paymentStatus: paymentFilter 
+  });
+
+  const updateBookingMutation = useUpdateBookingStatus();
   const { toast } = useToast();
 
-  // Load bookings from database
-  const loadBookings = async () => {
-    try {
-      setIsLoading(true);
+  // Handle loading error
+  if (bookingsError) {
+    toast({
+      title: "Fout bij laden boekingen",
+      description: "Kon boekingen niet laden. Probeer het opnieuw.",
+      variant: "destructive",
+    });
+  }
 
-      // Use the optimized RPC function to get bookings with all related data
-      const { data: bookingsData, error: bookingsError } = await supabase.rpc('get_bookings_with_details');
-
-      if (bookingsError) throw bookingsError;
-
-      // The RPC function returns data already formatted
-      setBookings(bookingsData || []);
-    } catch (error) {
-      console.error('Error loading bookings:', error);
-      toast({
-        title: "Fout bij laden boekingen",
-        description: "Kon boekingen niet laden. Probeer het opnieuw.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // Update booking status using optimized mutation
+  const handleStatusUpdate = (bookingId: string, newStatus: string) => {
+    updateBookingMutation.mutate({ bookingId, status: newStatus });
   };
 
-  useEffect(() => {
-    loadBookings();
-  }, []);
-
-  // Update booking status
-  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
-    try {
-      const { error } = await (supabase as any)
-        .from('bookings')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', bookingId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Status bijgewerkt",
-        description: "De boekingsstatus is succesvol bijgewerkt.",
-      });
-
-      loadBookings();
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      toast({
-        title: "Fout bij bijwerken",
-        description: "Kon status niet bijwerken. Probeer het opnieuw.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Filter bookings based on selected filters
-  const filteredBookings = bookings.filter(booking => {
-    const statusMatch = statusFilter === "all" || booking.status === statusFilter;
-    const paymentMatch = paymentFilter === "all" || booking.payment_status === paymentFilter;
-    return statusMatch && paymentMatch;
-  });
+  // Bookings are already filtered by React Query
 
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -237,7 +201,7 @@ export function BookingManager() {
         </div>
       </CardHeader>
       <CardContent>
-        {filteredBookings.length === 0 ? (
+        {bookings.length === 0 ? (
           <div className="text-center py-12">
             <CalendarCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Geen boekingen</h3>
@@ -264,7 +228,7 @@ export function BookingManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBookings.map((booking) => {
+                {bookings.map((booking) => {
                   const statusBadge = getStatusBadge(booking.status);
                   const paymentBadge = getPaymentStatusBadge(booking.payment_status);
                   
@@ -330,7 +294,7 @@ export function BookingManager() {
                       <TableCell>
                         <Select
                           value={booking.status}
-                          onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                          onValueChange={(value) => handleStatusUpdate(booking.id, value)}
                         >
                           <SelectTrigger className="w-32">
                             <Badge className={statusBadge.color}>

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Car, Mail, Phone, User, Eye, EyeOff, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -254,7 +255,7 @@ export default function Login() {
                       <Input
                         id="email"
                         type="email"
-                        placeholder="je@voorbeeld.nl"
+                        placeholder="uw.email@voorbeeld.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10 h-12"
@@ -266,17 +267,13 @@ export default function Login() {
                 <TabsContent value="phone" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefoonnummer</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+31 6 12345678"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="pl-10 h-12"
-                      />
-                    </div>
+                    <PhoneInput
+                      id="phone"
+                      value={phone}
+                      onChange={setPhone}
+                      placeholder="123 456 789"
+                      defaultCountry="BE"
+                    />
                   </div>
                 </TabsContent>
 

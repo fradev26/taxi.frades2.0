@@ -9,6 +9,7 @@ import { signOut } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ROUTES } from "@/constants";
 import { cn } from "@/lib/utils";
+import { CompactWalletBalance } from "@/components/WalletBalance";
 
 export function AccountDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,14 +37,6 @@ export function AccountDropdown() {
 
   const menuItems = [
     {
-      icon: HelpCircle,
-      label: "Hulp",
-      onClick: () => {
-        // Navigate to help page or open help modal
-        setIsOpen(false);
-      }
-    },
-    {
       icon: Wallet,
       label: "Wallet",
       onClick: () => {
@@ -52,26 +45,18 @@ export function AccountDropdown() {
       }
     },
     {
+      icon: UserCircle,
+      label: "Profiel",
+      onClick: () => {
+        navigate(ROUTES.PROFILE);
+        setIsOpen(false);
+      }
+    },
+    {
       icon: Clock,
       label: "Activiteit",
       onClick: () => {
         navigate(ROUTES.TRIPS);
-        setIsOpen(false);
-      }
-    },
-    {
-      icon: Settings,
-      label: "Beheer het account",
-      onClick: () => {
-        navigate(ROUTES.ACCOUNT);
-        setIsOpen(false);
-      }
-    },
-    {
-      icon: FileText,
-      label: "Belastingprofiel",
-      onClick: () => {
-        // Navigate to tax profile page
         setIsOpen(false);
       }
     }
@@ -97,42 +82,48 @@ export function AccountDropdown() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Account Button */}
+      {/* Account Button - Uber Style */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "gap-2 h-10 px-3 transition-all duration-200",
-          isOpen && "bg-accent"
-        )}
+        className="flex items-center gap-3 hover:bg-gray-50 rounded-full px-4 py-2 h-auto"
       >
-        <User className="w-5 h-5 text-foreground" />
+        <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center">
+          <span className="text-sm font-medium">
+            {getUserInitials()}
+          </span>
+        </div>
         <ChevronDown className={cn(
-          "w-4 h-4 transition-transform duration-200",
+          "w-4 h-4 text-gray-600 transition-transform duration-200",
           isOpen && "rotate-180"
         )} />
       </Button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu - Uber Style */}
       {isOpen && (
         <Card className={cn(
-          "absolute right-0 top-12 w-64 shadow-lg border-0 z-50",
+          "absolute right-0 top-14 w-72 shadow-xl border-0 z-50 bg-white",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
         )}>
           <CardContent className="p-0">
             {/* User Info Header */}
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-background border border-border rounded-full flex items-center justify-center">
-                  <UserCircle className="w-6 h-6 text-primary" />
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center">
+                  <span className="text-lg font-medium">
+                    {getUserInitials()}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">
+                  <p className="font-semibold text-base text-gray-900 truncate">
                     {user?.email || "Gebruiker"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Persoonlijk account
+                  <div className="mt-1">
+                    <CompactWalletBalance />
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    5 ⭐ • Lid sinds 2024
                   </p>
                 </div>
               </div>
@@ -144,24 +135,26 @@ export function AccountDropdown() {
                 <button
                   key={index}
                   onClick={item.onClick}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-accent transition-colors duration-150"
+                  className="w-full flex items-center gap-4 px-6 py-4 text-sm hover:bg-gray-50 transition-colors duration-150"
                 >
-                  <item.icon className="w-4 h-4 text-muted-foreground" />
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <item.icon className="w-4 h-4 text-gray-700" />
+                  </div>
+                  <span className="flex-1 text-left font-medium text-gray-900">{item.label}</span>
                 </button>
               ))}
             </div>
 
-            <Separator />
-
             {/* Logout Button */}
-            <div className="p-2">
+            <div className="border-t border-gray-100 pt-2">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-2 py-3 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors duration-150"
+                className="w-full flex items-center gap-4 px-6 py-4 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
               >
-                <LogOut className="w-4 h-4" />
-                <span>Uitloggen</span>
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <LogOut className="w-4 h-4 text-red-600" />
+                </div>
+                <span className="font-medium">Uitloggen</span>
               </button>
             </div>
           </CardContent>

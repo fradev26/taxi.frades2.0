@@ -64,5 +64,15 @@ export const signInWithApple = async () => {
 
 export const isAdmin = (email?: string) => {
   if (!email) return false;
-  return email.endsWith('@frades.be');
+  
+  // Admin emails
+  const adminEmails = [
+    '@frades.be',
+    'admin@test.com',  // For development testing
+    'test@admin.com'   // For development testing
+  ];
+  
+  return adminEmails.some(adminEmail => 
+    adminEmail.startsWith('@') ? email.endsWith(adminEmail) : email === adminEmail
+  );
 };

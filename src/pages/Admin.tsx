@@ -13,7 +13,15 @@ import { DriverManager } from "@/components/admin/DriverManager";
 import { BookingManager } from "@/components/admin/BookingManager";
 
 export default function Admin() {
-  const { isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
+
+  // Debug information
+  console.log('Admin Debug:', { 
+    user: user?.email, 
+    isAdmin, 
+    isLoading,
+    userMetadata: user?.user_metadata 
+  });
 
   if (isLoading) {
     return <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
@@ -26,7 +34,19 @@ export default function Admin() {
       <Card className="w-full max-w-md mx-auto">
         <CardContent className="text-center pt-6">
           <h1 className="text-2xl font-bold mb-4">Toegang geweigerd</h1>
-          <p className="text-muted-foreground">Je hebt geen toegang tot dit admin paneel.</p>
+          <p className="text-muted-foreground mb-4">Je hebt geen toegang tot dit admin paneel.</p>
+          {user && (
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+              <p><strong>Huidige gebruiker:</strong> {user.email}</p>
+              <p><strong>Admin status:</strong> {isAdmin ? 'Ja' : 'Nee'}</p>
+              <p className="mt-2 text-xs">Admin toegang vereist @frades.be email</p>
+            </div>
+          )}
+          {!user && (
+            <div className="text-sm text-muted-foreground">
+              <p>Je bent niet ingelogd. <a href="/login" className="text-primary underline">Log hier in</a></p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>;

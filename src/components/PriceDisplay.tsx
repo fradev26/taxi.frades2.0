@@ -17,7 +17,7 @@ interface PriceDisplayProps {
   className?: string;
 }
 
-export function PriceDisplay({
+export const PriceDisplay = React.memo(function PriceDisplay({
   priceBreakdown,
   loading = false,
   error = null,
@@ -209,7 +209,7 @@ export function PriceDisplay({
       </CardContent>
     </Card>
   );
-}
+});
 
 // Simplified price display for inline use
 export function InlinePrice({ 
@@ -252,7 +252,7 @@ export function InlinePrice({
 }
 
 // Price comparison component for vehicle selection
-export function PriceComparison({ 
+export const PriceComparison = React.memo(function PriceComparison({ 
   prices 
 }: { 
   prices: Array<{vehicleType: string, price: PriceBreakdown}> 
@@ -278,4 +278,4 @@ export function PriceComparison({
       ))}
     </div>
   );
-}
+});

@@ -94,6 +94,13 @@ export function TouchStopoverManager({
                 <Input
                   value={stopover.address}
                   onChange={(e) => onStopoverUpdate(stopover.id, 'address', e.target.value)}
+                  onKeyDown={(e) => {
+                    // Allow spaces and prevent any interference
+                    if (e.key === ' ') {
+                      e.stopPropagation();
+                      // Don't prevent default - we want the space to be typed
+                    }
+                  }}
                   placeholder={`Tussenstop ${index + 1} adres`}
                   className="text-sm border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
                 />

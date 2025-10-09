@@ -11,7 +11,7 @@ interface VehicleSelectorProps {
   className?: string;
 }
 
-export function VehicleSelector({
+export const VehicleSelector = React.memo(function VehicleSelector({
   selectedVehicle,
   onVehicleSelect,
   showPricing = false,
@@ -107,5 +107,5 @@ export function VehicleSelector({
       </div>
     </div>
   );
-}
+});
 

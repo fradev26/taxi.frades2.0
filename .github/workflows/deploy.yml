@@ -1,0 +1,306 @@
+name: 🚀 Production Deployment Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality & Testing
+  quality-checks:
+    name: 🔍 Quality & Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🧹 Lint code
+        run: npm run lint
+
+      - name: 🔎 TypeScript check
+        run: npx tsc --noEmit
+
+      - name: 🧪 Run tests
+        run: npm run test
+
+      - name: 🔒 Security audit
+        run: npm audit --audit-level=high
+
+      - name: 📊 Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: always()
+
+  # Build & Bundle Analysis
+  build-analysis:
+    name: 🏗️ Build & Analysis
+    runs-on: ubuntu-latest
+    needs: quality-checks
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build application
+        run: npm run build
+        env:
+          VITE_APP_VERSION: ${{ github.sha }}
+
+      - name: 📦 Analyze bundle size
+        run: |
+          npm install -g bundlesize
+          bundlesize
+
+      - name: 📊 Bundle analyzer
+        run: |
+          npm run build:analyze
+          ls -la dist/
+
+      - name: 💾 Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: dist
+          key: build-${{ github.sha }}
+
+  # Performance Testing
+  performance-test:
+    name: ⚡ Performance Testing
+    runs-on: ubuntu-latest
+    needs: build-analysis
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 💾 Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: dist
+          key: build-${{ github.sha }}
+
+      - name: 🚀 Start preview server
+        run: |
+          npm run preview &
+          sleep 10
+
+      - name: 🌐 Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          configPath: './lighthouse.config.js'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # Security Scanning
+  security-scan:
+    name: 🛡️ Security Scanning
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔒 Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: 🔍 OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'taxi-frades'
+          path: '.'
+          format: 'HTML'
+
+  # Docker Build
+  docker-build:
+    name: 🐳 Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [quality-checks, build-analysis]
+    if: github.event_name == 'push'
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: 🏗️ Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 📝 Output image
+        id: image
+        run: echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  # Staging Deployment
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, performance-test, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: https://staging.taxi-frades.com
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          echo "Image: ${{ needs.docker-build.outputs.image }}"
+          # Add actual deployment commands here
+
+      - name: 🧪 Health check
+        run: |
+          sleep 30
+          curl -f https://staging.taxi-frades.com/health || exit 1
+
+      - name: 🧪 Smoke tests
+        run: |
+          npm ci
+          npm run test:e2e:staging
+
+  # Production Deployment
+  deploy-production:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+      url: https://taxi-frades.com
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📋 Pre-deployment checklist
+        run: |
+          echo "✅ Code quality checks passed"
+          echo "✅ Security scans completed"
+          echo "✅ Performance tests passed"
+          echo "✅ Staging deployment successful"
+
+      - name: 🚀 Blue-Green Deployment
+        run: |
+          echo "Starting blue-green deployment..."
+          echo "Image: ${{ needs.docker-build.outputs.image }}"
+          # Add blue-green deployment logic here
+
+      - name: 🧪 Production health check
+        run: |
+          sleep 60
+          curl -f https://taxi-frades.com/health || exit 1
+
+      - name: 📊 Post-deployment monitoring
+        run: |
+          echo "Setting up monitoring alerts..."
+          # Configure monitoring for new deployment
+
+  # Rollback
+  rollback:
+    name: 🔄 Rollback Production
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+    needs: deploy-production
+    steps:
+      - name: 🔄 Rollback to previous version
+        run: |
+          echo "Rolling back production deployment..."
+          # Add rollback commands here
+
+      - name: 📢 Notify team
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Notifications
+  notify:
+    name: 📢 Notifications
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [deploy-staging, deploy-production]
+    steps:
+      - name: 📢 Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              "text": "Deployment Status: ${{ job.status }}",
+              "attachments": [{
+                "color": "${{ job.status == 'success' && 'good' || 'danger' }}",
+                "fields": [{
+                  "title": "Branch",
+                  "value": "${{ github.ref }}",
+                  "short": true
+                }, {
+                  "title": "Commit",
+                  "value": "${{ github.sha }}",
+                  "short": true
+                }]
+              }]
+            }

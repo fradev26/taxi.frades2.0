@@ -2,13 +2,19 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface UserProfile {
   id: string;
-  email: string;
+  email?: string;
   first_name?: string;
   last_name?: string;
   phone?: string;
   address?: string;
   company_name?: string;
   btw_number?: string;
+  company_address?: string;
+  company_phone?: string;
+  tax_category?: string;
+  fiscal_year?: string;
+  accounting_method?: string;
+  tax_notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -29,22 +35,64 @@ export const getUserProfile = async (userId: string): Promise<{ data: UserProfil
     .eq('id', userId)
     .maybeSingle();
 
-  return { data, error };
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (data) {
+    // Get additional data from auth.users since it may not be in profiles
+    const { data: { user } } = await supabase.auth.getUser();
+    const profileWithAuthData = {
+      ...data,
+      email: user?.email || data.email || '',
+      first_name: data.first_name || user?.user_metadata?.first_name || '',
+      last_name: data.last_name || user?.user_metadata?.last_name || '',
+      phone: data.phone || user?.user_metadata?.phone || ''
+    };
+    return { data: profileWithAuthData, error: null };
+  }
+
+  return { data: null, error: null };
 };
 
 export const updateUserProfile = async (
   userId: string,
   updates: UpdateUserProfileData
 ): Promise<{ data: UserProfile | null; error: any }> => {
+  // Only update fields that exist in the database
+  const safeUpdates: any = {};
+  
+  // Only include non-undefined values
+  Object.keys(updates).forEach(key => {
+    if (updates[key as keyof UpdateUserProfileData] !== undefined) {
+      safeUpdates[key] = updates[key as keyof UpdateUserProfileData];
+    }
+  });
+
   const { data, error } = await supabase
     .from('profiles')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
+    .update(safeUpdates)
     .eq('id', userId)
     .select()
-    .maybeSingle();
+    .single();
+
+  if (error) {
+    console.error('Error updating profile:', error);
+    return { data: null, error };
+  }
+
+  // Combine with auth data
+  if (data) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const profileWithAuthData = {
+      ...data,
+      email: user?.email || data.email || '',
+      first_name: data.first_name || user?.user_metadata?.first_name || '',
+      last_name: data.last_name || user?.user_metadata?.last_name || '',
+      phone: data.phone || user?.user_metadata?.phone || ''
+    };
+    return { data: profileWithAuthData, error: null };
+  }
 
   return { data, error };
 };
@@ -56,5 +104,35 @@ export const getCurrentUserProfile = async (): Promise<{ data: UserProfile | nul
     return { data: null, error: new Error('No authenticated user') };
   }
 
-  return getUserProfile(user.id);
+  // Try to get existing profile
+  const { data: profile, error } = await getUserProfile(user.id);
+  
+  // If profile doesn't exist, create one
+  if (!profile && !error) {
+    const { data: newProfile, error: createError } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating profile:', createError);
+      return { data: null, error: createError };
+    }
+
+    // Create a complete profile object with data from auth
+    const profileWithAuthData = {
+      ...newProfile,
+      email: user.email,
+      first_name: user.user_metadata?.first_name || '',
+      last_name: user.user_metadata?.last_name || '',
+      phone: user.user_metadata?.phone || ''
+    };
+
+    return { data: profileWithAuthData, error: null };
+  }
+
+  return { data: profile, error };
 };

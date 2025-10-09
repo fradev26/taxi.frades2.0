@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { BookingInterface } from "@/components/BookingInterface";
+import { ServicesSection } from "@/components/ServicesSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Car, MapPin, Clock, Shield, Star, Users } from "lucide-react";
@@ -119,6 +120,10 @@ const Index = () => {
           </div>
         </section>
       </div>
+      
+      {/** BEGIN: UI uit image.png **/}
+      <ServicesSection />
+      {/** EINDE **/}
       
       <Footer />
     </div>

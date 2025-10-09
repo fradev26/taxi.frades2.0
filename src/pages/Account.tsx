@@ -32,6 +32,11 @@ export default function Account() {
 
   useEffect(() => {
     if (!authLoading && !user) {
+      toast({
+        title: "Inloggen vereist",
+        description: "Je moet inloggen om je account te beheren.",
+        variant: "destructive",
+      });
       navigate("/login");
       return;
     }
@@ -47,6 +52,7 @@ export default function Account() {
       const { data, error } = await getCurrentUserProfile();
 
       if (error) {
+        console.error('Profile loading error:', error);
         toast({
           title: "Fout bij laden profiel",
           description: error.message,
@@ -62,8 +68,21 @@ export default function Account() {
           company_name: data.company_name || '',
           btw_number: data.btw_number || ''
         });
+        toast({
+          title: "Profiel geladen",
+          description: "Je profielgegevens zijn succesvol geladen.",
+        });
+      } else {
+        // This shouldn't happen anymore with the auto-create logic
+        console.error('No profile data returned');
+        toast({
+          title: "Profiel probleem",
+          description: "Er werd geen profieldata gevonden. Probeer de pagina te verversen.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      console.error('Unexpected error loading profile:', error);
       toast({
         title: "Fout bij laden profiel",
         description: "Er is een onverwachte fout opgetreden.",
@@ -166,13 +185,18 @@ export default function Account() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <Card className="w-full max-w-md mx-auto">
             <CardContent className="text-center pt-6">
-              <h1 className="text-2xl font-bold mb-4">Profiel niet gevonden</h1>
+              <h1 className="text-2xl font-bold mb-4">Profiel wordt aangemaakt</h1>
               <p className="text-muted-foreground mb-4">
-                Er kon geen profiel worden gevonden voor uw account.
+                Er wordt een profiel voor uw account aangemaakt. Dit kan even duren.
               </p>
-              <Button onClick={() => navigate("/login")}>
-                Terug naar login
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={() => loadUserProfile()} variant="default">
+                  Opnieuw proberen
+                </Button>
+                <Button onClick={() => navigate("/")} variant="outline">
+                  Terug naar hoofdpagina
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -206,7 +230,7 @@ export default function Account() {
                 <h2 className="text-xl font-bold mb-1">
                   {userProfile.first_name} {userProfile.last_name}
                 </h2>
-                <p className="text-muted-foreground mb-4">{userProfile.email}</p>
+                <p className="text-muted-foreground mb-4">{userProfile.email || user?.email || 'Geen email'}</p>
                 <Button variant="taxi-outline" size="sm" className="gap-2">
                   <Edit className="w-4 h-4" />
                   Foto wijzigen
@@ -288,7 +312,7 @@ export default function Account() {
                     <Input
                       id="email"
                       type="email"
-                      value={userProfile.email}
+                      value={userProfile.email || user?.email || ''}
                       disabled={true}
                       className="pl-10 bg-muted"
                     />
@@ -334,11 +358,20 @@ export default function Account() {
           {/* Business Information */}
           {isBusinessAccount && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Building className="w-5 h-5 text-primary" />
                   Zakelijke gegevens
                 </CardTitle>
+                <Button
+                  variant="taxi-outline"
+                  size="sm"
+                  onClick={() => navigate('/belasting-profiel-zakelijk')}
+                  className="gap-2"
+                >
+                  <Building className="w-4 h-4" />
+                  Volledig profiel
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -369,6 +402,11 @@ export default function Account() {
                       placeholder="BE0123456789"
                     />
                   </div>
+                </div>
+                
+                <div className="pt-2 text-sm text-muted-foreground">
+                  Voor een volledig zakelijk profiel met factuurgegevens en betalingsinstellingen, 
+                  gebruik de knop "Volledig profiel" hierboven.
                 </div>
               </CardContent>
             </Card>
