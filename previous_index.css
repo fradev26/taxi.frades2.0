@@ -4,7 +4,6 @@
 
 /* FRADES Design System - Premium chauffeur service
 All colors MUST be HSL.
-Enhanced version with explicit utilities.
 */
 
 @layer base {
@@ -177,108 +176,5 @@ Enhanced version with explicit utilities.
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
-  }
-}
-
-@layer components {
-  /* Custom taxi variant buttons */
-  .btn-taxi-primary {
-    @apply bg-gradient-to-r from-black to-gray-900 text-white hover:from-gray-900 hover:to-black;
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
-    @apply shadow-md hover:shadow-lg hover:scale-105;
-  }
-  
-  .btn-taxi-outline {
-    @apply border-2 border-black text-black hover:bg-black hover:text-white;
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
-    @apply bg-transparent hover:shadow-lg;
-  }
-  
-  .btn-taxi-ghost {
-    @apply text-black hover:bg-gray-100 hover:text-black;
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
-    @apply bg-transparent;
-  }
-
-  /* Custom gradient backgrounds */
-  .bg-gradient-primary {
-    background: var(--gradient-primary);
-  }
-  
-  .bg-gradient-accent {
-    background: var(--gradient-accent);
-  }
-  
-  .bg-gradient-subtle {
-    background: var(--gradient-subtle);
-  }
-
-  /* Custom shadow utilities */
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-  
-  .shadow-taxi {
-    box-shadow: var(--shadow-md);
-  }
-
-  /* Custom card styles */
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-  }
-  
-  .card-premium {
-    @apply bg-white border border-gray-200 rounded-lg shadow-md;
-    @apply hover:shadow-lg hover:border-gray-300 transition-all duration-300;
-  }
-
-  /* Navigation styles */
-  .nav-item {
-    @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
-    @apply hover:bg-gray-100 hover:text-gray-900;
-  }
-  
-  .nav-item-active {
-    @apply bg-black text-white;
-  }
-
-  /* Form styles */
-  .form-input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
-    @apply focus:ring-2 focus:ring-black focus:border-black;
-    @apply transition-all duration-200;
-  }
-  
-  .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-2;
-  }
-
-  /* Status indicators */
-  .status-active {
-    @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold;
-  }
-  
-  .status-pending {
-    @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold;
-  }
-  
-  .status-inactive {
-    @apply bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold;
-  }
-
-  /* Layout utilities */
-  .container-taxi {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
-  
-  .section-padding {
-    @apply py-12 md:py-16 lg:py-20;
-  }
-  
-  .text-gradient-primary {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 }

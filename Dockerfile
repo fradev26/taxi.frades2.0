@@ -6,10 +6,9 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY bun.lockb ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -33,8 +32,7 @@ COPY nginx.prod.conf /etc/nginx/conf.d/default.conf
 # Copy SSL certificates (if available)
 # COPY ssl/ /etc/nginx/ssl/
 
-# Create nginx user
-RUN addgroup -S nginx && adduser -S nginx -G nginx
+# Nginx user already exists in the base image
 
 # Set permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html
