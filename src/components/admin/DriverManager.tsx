@@ -17,13 +17,6 @@ interface Driver {
   id: string;
   user_id: string;
   display_name?: string;
-  phone?: string;
-  company_name?: string;
-  btw_number?: string;
-  address?: string;
-  created_at: string;
-  updated_at: string;
-  // From auth.users via join
   email?: string;
 }
 
@@ -57,23 +50,31 @@ export function DriverManager() {
   });
   const { toast } = useToast();
 
-  // Load drivers from database
+  // Load all users from database (not just drivers)
   const loadDrivers = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
-      // Use the optimized RPC function to get profiles with user emails
-      const { data: profilesData, error: profilesError } = await supabase.rpc('get_profiles_with_emails');
-
-      if (profilesError) throw profilesError;
-
-      // The RPC function returns data already formatted with email addresses
-      setDrivers(profilesData || []);
+      // Query alleen chauffeurs (role = 'driver')
+      const { data: drivers, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'driver');
+      if (error) {
+        setDrivers([]);
+        toast({
+          title: "Fout bij laden chauffeurs",
+          description: "Kon chauffeurs niet laden uit users-tabel. Probeer het opnieuw.",
+          variant: "destructive",
+        });
+      } else {
+        setDrivers(drivers || []);
+      }
     } catch (error) {
+      setDrivers([]);
       console.error('Error loading drivers:', error);
       toast({
         title: "Fout bij laden chauffeurs",
-        description: "Kon chauffeurs niet laden. Probeer het opnieuw.",
+        description: error instanceof Error ? error.message : "Kon chauffeurs niet laden. Probeer het opnieuw.",
         variant: "destructive",
       });
     } finally {
@@ -181,7 +182,17 @@ export function DriverManager() {
           return;
         }
 
-        // Step 1: Create user in auth.users
+        // Step 1: Check if user already exists in auth.users
+        const { data: authList, error: authListError } = await supabase.auth.admin.listUsers();
+        if (authListError) {
+          throw new Error('Kan bestaande gebruikers niet ophalen. Probeer opnieuw.');
+        }
+        const alreadyExists = authList.users.some((u: any) => u.email === formData.email);
+        if (alreadyExists) {
+          throw new Error('Dit e-mailadres is al geregistreerd.');
+        }
+
+        // Step 2: Create user in auth.users
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -198,12 +209,18 @@ export function DriverManager() {
           throw new Error("Geen gebruiker geretourneerd na aanmaken");
         }
 
-        // Step 2: Create entry in public.users table
+        // Step 2: Create entry in public.users table met role 'driver'
         const { error: userError } = await (supabase as any)
           .from('users')
           .insert([{
             id: authData.user.id,
             email: formData.email,
+            role: 'driver',
+            display_name: formData.display_name || null,
+            phone: formData.phone || null,
+            company_name: formData.company_name || null,
+            btw_number: formData.btw_number || null,
+            address: formData.address || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }]);
@@ -214,24 +231,7 @@ export function DriverManager() {
           throw new Error(`Fout bij aanmaken gebruikersrecord: ${userError.message}`);
         }
 
-        // Step 3: Create profile for the driver
-        const { error: profileError } = await (supabase as any)
-          .from('profiles')
-          .insert([{
-            user_id: authData.user.id,
-            display_name: formData.display_name || null,
-            phone: formData.phone || null,
-            company_name: formData.company_name || null,
-            btw_number: formData.btw_number || null,
-            address: formData.address || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }]);
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          throw new Error(`Fout bij aanmaken profiel: ${profileError.message}`);
-        }
+        // Geen extra update nodig, alles zit in de insert
 
         toast({
           title: "Chauffeur toegevoegd",
@@ -254,19 +254,26 @@ export function DriverManager() {
     }
   };
 
-  // Delete driver profile
+  // Delete driver profile and remove from auth.users
   const handleDeleteDriver = async (driver: Driver) => {
     try {
+      // Verwijder uit users-tabel
       const { error } = await (supabase as any)
-        .from('profiles')
+        .from('users')
         .delete()
         .eq('id', driver.id);
 
       if (error) throw error;
 
+      // Verwijder uit auth.users
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(driver.id);
+      if (authDeleteError) {
+        throw new Error('Gebruiker uit database verwijderd, maar niet uit authenticatie.');
+      }
+
       toast({
         title: "Chauffeur verwijderd",
-        description: `${driver.display_name || driver.email} is succesvol verwijderd.`,
+        description: `${driver.display_name || driver.email} is succesvol verwijderd.",
       });
 
       loadDrivers();
@@ -274,7 +281,7 @@ export function DriverManager() {
       console.error('Error deleting driver:', error);
       toast({
         title: "Fout bij verwijderen",
-        description: "Kon chauffeur niet verwijderen. Probeer het opnieuw.",
+        description: error instanceof Error ? error.message : "Kon chauffeur niet verwijderen. Probeer het opnieuw.",
         variant: "destructive",
       });
     }
@@ -474,7 +481,7 @@ export function DriverManager() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-muted-foreground" />
-                      {driver.email}
+                      {typeof driver.email === 'object' && driver.email !== null ? driver.email.email : driver.email || <span className="text-muted-foreground italic">Geen e-mail</span>}
                     </div>
                   </TableCell>
                   <TableCell>

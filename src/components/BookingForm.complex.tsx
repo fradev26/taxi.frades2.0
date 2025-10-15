@@ -444,7 +444,7 @@ export const BookingForm = React.memo(function BookingForm() {
                 max={8}
                 min={1}
                 step={1}
-                className="w-full"
+                className="w-full !rounded-full !shadow-lg"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>1u</span>

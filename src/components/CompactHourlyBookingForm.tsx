@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +96,7 @@ export const CompactHourlyBookingForm = React.memo(function CompactHourlyBooking
     startTime: "",
     pickupLocation: "",
     pickupCoordinates: undefined,
-    vehicleType: "economy",
+    vehicleType: "standard", // Fix: changed from "economy" to "standard"
     paymentMethod: "ideal",
     guestName: "",
     guestEmail: "",
@@ -121,32 +121,6 @@ export const CompactHourlyBookingForm = React.memo(function CompactHourlyBooking
       setBookingData(prev => ({ ...prev, paymentMethod: 'direct' }));
     }
   }, [user, bookingData.paymentMethod]);
-
-  // Update step errors when validation changes
-  useEffect(() => {
-    const errors1: string[] = [];
-    if (!bookingData.pickupLocation?.trim()) errors1.push("Locatie is verplicht");
-    if (!bookingData.startDate) errors1.push("Datum is verplicht");
-    if (!bookingData.startTime) errors1.push("Tijd is verplicht");
-    if (!bookingData.duration || bookingData.duration < 1) errors1.push("Duur moet minimaal 1 uur zijn");
-    
-    const errors2: string[] = [];
-    if (!bookingData.vehicleType) errors2.push("Selecteer een voertuig");
-    if (!bookingData.paymentMethod) errors2.push("Selecteer een betaalmethode");
-    
-    const errors3: string[] = [];
-    if (!user && bookingData.paymentMethod !== 'invoice') {
-      if (!bookingData.guestName?.trim()) errors3.push("Naam is verplicht");
-      if (!bookingData.guestEmail?.trim()) errors3.push("E-mailadres is verplicht");
-      if (!bookingData.guestPhone?.trim()) errors3.push("Telefoonnummer is verplicht");
-    }
-    
-    setStepErrors({
-      1: errors1,
-      2: errors2,
-      3: errors3
-    });
-  }, [bookingData, user]);
   const navigate = useNavigate();
   const pickupInputRef = useRef<HTMLInputElement>(null);
 
@@ -337,25 +311,46 @@ export const CompactHourlyBookingForm = React.memo(function CompactHourlyBooking
     return Object.keys(newErrors).length === 0;
   };
 
-  // Step validation functions
-  const validateStep1 = (data: typeof bookingData): boolean => {
-    return !!(
-      data.pickupLocation?.trim() &&
-      data.startDate &&
-      data.startTime &&
-      data.duration && data.duration >= 1
-    );
-  };
+  // Step validation functions - using useCallback to prevent hoisting issues
+  const validateStep1 = useCallback((data: typeof bookingData): boolean => {
+    const errors: string[] = [];
+    
+    if (!data.pickupLocation?.trim()) {
+      errors.push("Locatie is verplicht");
+    }
+    if (!data.startDate) {
+      errors.push("Datum is verplicht");
+    }
+    if (!data.startTime) {
+      errors.push("Tijd is verplicht");
+    }
+    if (!data.duration || data.duration < 1 || data.duration > 24) {
+      errors.push("Duur moet tussen 1 en 24 uur zijn");
+    }
+    
+    setStepErrors(prev => ({ ...prev, 1: errors }));
+    return errors.length === 0;
+  }, []); // Remove bookingData dependency to prevent circular issues
 
-  const validateStep2 = (data: typeof bookingData): boolean => {
-    return !!(data.vehicleType && data.paymentMethod);
-  };
+  const validateStep2 = useCallback((data: typeof bookingData): boolean => {
+    const errors: string[] = [];
+    
+    if (!data.vehicleType) {
+      errors.push("Selecteer een voertuig");
+    }
+    if (!data.paymentMethod) {
+      errors.push("Selecteer een betaalmethode");
+    }
+    
+    setStepErrors(prev => ({ ...prev, 2: errors }));
+    return errors.length === 0;
+  }, []); // Remove bookingData dependency
 
-  const validateStep3 = (data: typeof bookingData): boolean => {
+  const validateStep3 = useCallback((data: typeof bookingData): boolean => {
     // Step 3 has no additional validation for hourly bookings
     // Guest info is only required for non-logged in users with non-invoice payment
     return true;
-  };
+  }, []); // Remove bookingData dependency
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -453,14 +448,14 @@ export const CompactHourlyBookingForm = React.memo(function CompactHourlyBooking
               <Slider
                 value={[bookingData.duration]}
                 onValueChange={(value) => setBookingData(prev => ({ ...prev, duration: value[0] }))}
-                max={8}
+                max={24}
                 min={1}
                 step={1}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>1u</span>
-                <span>8u</span>
+                <span>24u</span>
               </div>
             </div>
 

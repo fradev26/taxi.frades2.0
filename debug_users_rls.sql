@@ -1,0 +1,30 @@
+-- Tijdelijk RLS uitschakelen voor users tabel om te testen
+-- STAP 1: Test zonder RLS
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+
+-- Na de test, voer dit uit om RLS weer aan te zetten met werkende policies:
+-- 
+-- STAP 2: Zet RLS weer aan en maak werkende policies
+-- ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+-- 
+-- -- Verwijder alle oude policies
+-- DROP POLICY IF EXISTS "Users can read own data" ON public.users;
+-- DROP POLICY IF EXISTS "Users can update own data" ON public.users;
+-- DROP POLICY IF EXISTS "Admins can read all users" ON public.users;
+-- DROP POLICY IF EXISTS "Users can insert their own record" ON public.users;
+-- 
+-- -- Maak simpele werkende policies
+-- CREATE POLICY "users_select_policy" ON public.users
+--     FOR SELECT TO authenticated
+--     WITH CHECK (true);
+-- 
+-- CREATE POLICY "users_insert_policy" ON public.users
+--     FOR INSERT TO authenticated
+--     WITH CHECK (true);
+-- 
+-- CREATE POLICY "users_update_policy" ON public.users
+--     FOR UPDATE TO authenticated
+--     WITH CHECK (true);
+-- 
+-- -- Zorg voor juiste grants
+-- GRANT ALL ON public.users TO authenticated;

@@ -2,46 +2,47 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Car, Plane, Clock, Smartphone, PartyPopper } from 'lucide-react';
 
 interface ServiceCard {
   id: string;
   title: string;
   description: string;
-  image: string;
+  icon: React.ComponentType<any>;
   isNew?: boolean;
   comingSoon?: boolean;
   href: string;
 }
 
 const services: ServiceCard[] = [
-  {
-    id: 'city-to-city',
-    title: 'City-to-city rides',
-    description: 'Your stress-free solution for long-distance rides with professional chauffeurs across the globe.',
-    image: 'https://images.unsplash.com/photo-1549317336-206569e8475c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-    href: '/services/city-to-city',
-  },
+  // Duplicaten verwijderd
   {
     id: 'airport-transfers',
-    title: 'Airport transfers',
-    description: 'With additional wait time and flight tracking in case of delays, our service is optimized to make every airport transfer a breeze.',
-    image: 'https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+    title: 'Airport & Port Transfers',
+    description: 'Vervoer naar luchthavens en cruise terminals, inclusief tracking en wachttijd.',
+    icon: Plane,
     href: '/services/airport-transfers',
   },
   {
     id: 'hourly-hire',
-    title: 'Hourly and full day hire',
-    description: 'For by-the-hour bookings or daily chauffeur hire, choose one of our tailored services for total flexibility, reliability and comfort.',
-    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-    href: '/services/hourly-full-day',
+    title: 'Privéchauffeur',
+    description: 'Flexibel en comfortabel vervoer per uur of dag.',
+    icon: Clock,
+    href: '/services/private-chauffeur',
+  },
+  {
+    id: 'horeca-events',
+    title: 'Horeca & Events',
+    description: 'VIP-vervoer voor horeca, events en gasten.',
+    icon: PartyPopper,
+    isNew: true,
+    href: '/services/horeca-events',
   },
   {
     id: 'chauffeur-hailing',
-    title: 'Chauffeur hailing',
-    description: 'Enjoy the quality of a traditional chauffeur, with the convenience of riding within minutes of booking.',
-    image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-    isNew: true,
+    title: 'On-demand Chauffeur',
+    description: 'Boek direct via app. Chauffeur binnen minuten.',
+    icon: Smartphone,
     comingSoon: true,
     href: '/services/chauffeur-hailing',
   },
@@ -54,11 +55,14 @@ export function ServicesSection() {
         {/** BEGIN: UI uit image.png **/}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-            Our services
+            Onze diensten
           </h2>
+          <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">
+            Professioneel vervoer voor elke gelegenheid. Van zakelijke afspraken tot speciale evenementen.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 justify-items-center">
           {services.map((service) => (
             <ServiceCard key={service.id} service={service} />
           ))}
@@ -70,49 +74,35 @@ export function ServicesSection() {
 }
 
 function ServiceCard({ service }: { service: ServiceCard }) {
+  const IconComponent = service.icon;
+  
   return (
-    <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border bg-card shadow-lg rounded-lg flex flex-col h-full">
-      <div className="relative">
-        <div className="aspect-[4/3] overflow-hidden">
-          <img
-            src={service.image}
-            alt={service.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
+  <a href={service.href} tabIndex={0} aria-disabled={service.comingSoon} className={`group overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-gray-200 bg-card shadow-2xl rounded-xl flex flex-col h-full relative focus:outline-none focus:ring-2 focus:ring-emerald-500`}>
+      {/* Icon Header */}
+      <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex flex-col items-center text-center">
+        <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+          <IconComponent className="w-8 h-8 text-white" />
         </div>
-        {service.isNew && (
+        {(service.isNew || service.comingSoon) && (
           <Badge 
-            className={`absolute top-4 left-4 text-white font-medium px-3 py-1 text-xs ${
+            className={`absolute top-4 right-4 text-white font-medium px-3 py-1 text-xs ${
               service.comingSoon 
                 ? 'bg-blue-500 hover:bg-blue-600' 
                 : 'bg-emerald-500 hover:bg-emerald-600'
             }`}
           >
-            {service.comingSoon ? 'COMING SOON' : 'NEW'}
+            {service.comingSoon ? 'BINNENKORT' : 'NIEUW'}
           </Badge>
         )}
-      </div>
-      
-      <CardContent className="p-8 flex flex-col flex-grow">
-        <h3 className="text-2xl font-bold text-card-foreground mb-4 leading-tight">
+        <h3 className="text-xl font-bold text-card-foreground mb-2 leading-tight">
           {service.title}
         </h3>
-        
-        <p className="text-muted-foreground text-base leading-relaxed mb-6 flex-grow">
+      </div>
+      <div className="p-6 flex flex-col flex-grow cursor-pointer">
+        <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-grow text-center min-h-[48px] flex items-center justify-center">
           {service.description}
         </p>
-        
-        <Button 
-          variant="outline" 
-          className="w-full font-medium py-3 rounded-md mt-auto"
-          asChild
-        >
-          <a href={service.href} className="flex items-center justify-center">
-            Learn more
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </a>
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </a>
   );
 }

@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { AccountDropdown } from "@/components/AccountDropdown";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Car, Wallet, Clock, User, Settings, Menu, X, UserCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +8,7 @@ import { signOut } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ROUTES, APP_CONFIG } from "@/constants";
 
-export const Navigation = React.memo(function Navigation() {
+export const Navigation = memo(function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
@@ -122,7 +121,7 @@ export const Navigation = React.memo(function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center justify-between w-full px-6 py-4 bg-card border-b border-border">
+      <nav className="hidden md:flex items-center justify-between w-full px-6 py-4 bg-card border-b border-gray-100">
         {/* Left spacer for centering */}
         <div className="flex-1"></div>
         
@@ -141,16 +140,19 @@ export const Navigation = React.memo(function Navigation() {
           {headerNavigationItems.map((item) => (
             <Button
               key={item.path}
-              variant={isActive(item.path) ? "taxi-primary" : "taxi-ghost"}
+              variant={isActive(item.path) ? "default" : "ghost"}
               size="sm"
               onClick={() => navigate(item.path)}
-              className="gap-2"
+              className={`gap-2 rounded-xl border-2 transition-colors ${
+                isActive(item.path) 
+                  ? "bg-black text-white border-black hover:bg-gray-800" 
+                  : "bg-transparent text-black border-transparent hover:bg-gray-100 hover:border-gray-200"
+              }`}
             >
               <item.icon className="w-4 h-4" />
               {item.label}
             </Button>
           ))}
-          <ThemeToggle />
           {user && <AccountDropdown />}
         </div>
       </nav>
@@ -158,7 +160,7 @@ export const Navigation = React.memo(function Navigation() {
       {/* Mobile Navigation */}
       <nav className="md:hidden">
         {/* Mobile Header */}
-        <div className="flex items-center justify-between w-full px-4 py-3 bg-card border-b border-border">
+        <div className="flex items-center justify-between w-full px-4 py-3 bg-card border-b border-gray-100">
           {/* Hamburger Menu Button */}
           {user && (
             <Button
@@ -183,8 +185,6 @@ export const Navigation = React.memo(function Navigation() {
               {APP_CONFIG.name}
             </span>
           </button>
-
-          <ThemeToggle />
         </div>
 
         {/* Mobile Side Menu Backdrop */}
@@ -249,16 +249,16 @@ export const Navigation = React.memo(function Navigation() {
                     setIsMobileMenuOpen(false);
                   }}
                   className={`
-                    w-full justify-start gap-4 px-6 py-4 h-auto rounded-none text-left
+                    w-full justify-start gap-4 px-6 py-4 h-auto rounded-xl text-left border-2 transition-colors
                     ${isActive(item.path) 
-                      ? 'bg-primary/10 text-primary border-r-4 border-primary' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-black text-white border-black' 
+                      : 'text-black border-transparent hover:bg-gray-100 hover:border-gray-200'
                     }
                   `}
                 >
                   <div className={`
                     w-10 h-10 rounded-full flex items-center justify-center
-                    ${isActive(item.path) ? 'bg-primary text-white' : 'bg-gray-100'}
+                    ${isActive(item.path) ? 'bg-white text-black' : 'bg-gray-100 text-black'}
                   `}>
                     <item.icon className="w-5 h-5" />
                   </div>
@@ -275,7 +275,7 @@ export const Navigation = React.memo(function Navigation() {
                     handleLogout();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full justify-start gap-4 px-6 py-4 h-auto rounded-none text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="w-full justify-start gap-4 px-6 py-4 h-auto rounded-xl border-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
                 >
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                     <User className="w-5 h-5 text-red-600" />

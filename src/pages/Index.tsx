@@ -59,25 +59,25 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
             {/* Left Side - Hero Text */}
-            <div className="text-white space-y-8">
+            <div className="space-y-8">
               <div className="space-y-6">
-                <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+                <h1 className="text-4xl md:text-6xl font-bold leading-tight hero-text-primary">
                   The global chauffeur service
                 </h1>
-                <p className="text-xl md:text-2xl text-white/90 max-w-2xl">
+                <p className="text-xl md:text-2xl max-w-2xl hero-text-secondary">
                   Professionele chauffeursdienst voor al uw vervoersbehoeften. 
                   Betrouwbaar, comfortabel en altijd op tijd.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild variant="taxi-primary" size="lg" className="text-lg px-8">
+                <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl hover:bg-gray-800 transition-colors">
                   <Link to={ROUTES.OVER_ONS}>
                     <Car className="w-5 h-5 mr-2" />
                     Meer informatie
                   </Link>
                 </Button>
-                <Button asChild variant="taxi-outline" size="lg" className="text-lg px-8 border-white text-white hover:bg-white hover:text-black">
+                <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-white rounded-xl hover:bg-gray-100 transition-colors">
                   <Link to={ROUTES.VOOR_BEDRIJVEN}>
                     <Users className="w-5 h-5 mr-2" />
                     Voor bedrijven
@@ -106,12 +106,12 @@ const Index = () => {
               Nieuwe gebruikers krijgen €10 korting!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild variant="taxi-primary" size="lg" className="text-lg px-8">
+              <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl hover:bg-gray-800 transition-colors">
                 <Link to={ROUTES.LOGIN}>
                   Account aanmaken
                 </Link>
               </Button>
-              <Button asChild variant="taxi-outline" size="lg" className="text-lg px-8">
+              <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-colors">
                 <Link to={ROUTES.OVER_ONS}>
                   Meer informatie
                 </Link>

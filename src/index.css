@@ -1,155 +1,182 @@
+@import url('./slider-fix.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* FRADES Design System - Premium chauffeur service
-All colors MUST be HSL.
-Enhanced version with explicit utilities.
+/* 
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           FRADES DESIGN SYSTEM                              ║
+║                     Premium Chauffeur Service Styling                       ║
+║                            LIGHT MODE ONLY                                  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ OPTIMIZATION NOTES:                                                         ║
+║ - Dark mode removed - Light mode only for maximum readability              ║
+║ - Transforms & scales removed from hover states for better performance      ║
+║ - Unused React imports cleaned up                                           ║
+║ - Google Maps loading optimized with lazy loading                           ║
+║ - Black text elements clearly marked for easy tweaking                      ║
+║                                                                              ║
+║ COLOR SYSTEM:                                                               ║
+║ - All colors optimized for light mode readability                          ║
+║ - CSS custom properties for easy manual tweaking                           ║
+║ - BLACK ELEMENTS marked with /* BLACK ELEMENT */ for easy finding           ╚══════════════════════════════════════════════════════════════════════════════╝
 */
 
 @layer base {
   :root {
-    /* Core brand colors - Black/White theme */
-    --primary: 0 0% 0%;                  /* Pure black */
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 0 0% 10%;
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       BRAND COLORS - Core identity colors for premium taxi service
+       ═══════════════════════════════════════════════════════════════════════════════ */
     
-    /* Accent colors - Grayscale */
-    --accent-green: 0 0% 20%;            /* Dark gray */
-    --accent-green-light: 0 0% 30%;
+    /* PRIMARY BRAND COLOR - Pure black for premium identity */
+    /* BLACK ELEMENT */ --primary: 0 0% 0%;                  /* Pure black - premium brand - TWEAK HERE */
+    --primary-foreground: 0 0% 100%;     /* White text on black */
+    --primary-hover: 0 0% 10%;           /* Subtle hover state - OPTIMIZED: no transform */
     
-    /* Background system */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    /* Luxury accent palette - sophisticated colors with premium feel */
+    --luxury-gold: 43 74% 66%;           /* Elegant gold accent #D4AF37 equivalent */
+    --luxury-gold-light: 43 60% 75%;     /* Lighter gold variant */
+    --luxury-silver: 200 8% 70%;         /* Premium silver */
+    --luxury-platinum: 210 10% 85%;      /* Platinum highlight */
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       GRAYSCALE SYSTEM - Professional color scale for light theme
+       HUMAN TWEAKABLE: Adjust these percentages to modify overall site brightness
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --gray-50: 210 20% 98%;              /* Ultra light background */
+    --gray-100: 210 15% 95%;             /* Light surface */
+    --gray-200: 210 10% 90%;             /* Subtle borders */
+    --gray-300: 210 8% 82%;              /* Disabled states */
+    --gray-400: 210 7% 65%;              /* Placeholder text */
+    --gray-500: 210 6% 48%;              /* Secondary text */
+    /* BLACK ELEMENT */ --gray-600: 210 7% 35%;              /* Primary text - TWEAK HERE */
+    /* BLACK ELEMENT */ --gray-700: 210 8% 25%;              /* Headings - TWEAK HERE */
+    /* BLACK ELEMENT */ --gray-800: 210 10% 15%;             /* Dark text - TWEAK HERE */
+    /* BLACK ELEMENT */ --gray-900: 210 15% 8%;              /* Darkest text - TWEAK HERE */
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       SURFACE SYSTEM - Background and card colors
+       HUMAN TWEAKABLE: Modify card colors for different visual emphasis
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --background: var(--gray-50);        /* Clean white background */
+    /* BLACK ELEMENT */ --foreground: var(--gray-900);       /* Deep black text for contrast - TWEAK HERE */
 
-    /* Cards and surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --card-hover: 0 0% 98%;
+    /* Card system with luxury elevation - OPTIMIZED: no transform on hover */
+    --card: 0 0% 100%;                   /* Pure white cards */
+    /* BLACK ELEMENT */ --card-foreground: var(--gray-800);  /* Dark text on cards - TWEAK HERE */
+    --card-hover: var(--gray-100);       /* Subtle hover state */
+    --card-border: var(--gray-200);      /* Refined border */
 
+    /* Interactive surfaces */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: var(--gray-800);
 
-    /* Secondary and muted */
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 0%;
+    /* Secondary system for depth */
+    --secondary: var(--gray-100);        /* Light gray backgrounds */
+    /* BLACK ELEMENT */ --secondary-foreground: var(--gray-700); /* Readable text - TWEAK HERE */
 
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
+    /* Muted elements for hierarchy */
+    --muted: var(--gray-200);            /* Subtle backgrounds */
+    --muted-foreground: var(--gray-500); /* Secondary text */
 
-    --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent system with luxury touches */
+    --accent: var(--luxury-silver);      /* Premium silver accent */
+    /* BLACK ELEMENT */ --accent-foreground: var(--gray-800); /* Dark text on accent - TWEAK HERE */
 
-    --destructive: 0 84% 60%;
+    /* Status colors */
+    --destructive: 0 84% 60%;            /* Error red */
     --destructive-foreground: 0 0% 100%;
+    --success: 142 69% 58%;              /* Success green */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;               /* Warning amber */
+    --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 0%;
+    /* Interactive elements */
+    --border: var(--gray-300);           /* Subtle borders */
+    --input: var(--gray-300);            /* Input borders */
+    --ring: var(--primary);              /* Focus rings */
 
-    --radius: 0.75rem;
+    /* Design system */
+    --radius: 0.75rem;                   /* Rounded corners */
     
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(0 0% 10%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(0 0% 20%) 0%, hsl(0 0% 30%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       LUXURY GRADIENTS - Sophisticated gradients for premium UI elements
+       HUMAN TWEAKABLE: Adjust gradient angles and stops for different visual effects
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--luxury-gold)) 0%, hsl(var(--luxury-silver)) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--gray-800)) 0%, hsl(var(--gray-900)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(var(--gray-50)) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--gray-50)) 0%, hsl(0 0% 100%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-700)) 50%, hsl(var(--luxury-gold)) 100%);
     
-    /* Shadows */
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-    --shadow-glow: 0 0 30px rgba(0, 0, 0, 0.15);
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       PREMIUM SHADOWS - Elegant shadow system for depth and luxury feel
+       HUMAN TWEAKABLE: Adjust opacity values to make shadows more/less prominent
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 24px -4px rgba(0, 0, 0, 0.16);
+    --shadow-xl: 0 16px 48px -8px rgba(0, 0, 0, 0.20);
+    --shadow-luxury: 0 8px 32px -4px rgba(212, 175, 55, 0.15);
+    --shadow-glow: 0 0 24px rgba(212, 175, 55, 0.25);
     
-    /* Animations */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       ANIMATION SYSTEM - Smooth, luxury-feeling transitions
+       HUMAN TWEAKABLE: Adjust timing values to make animations faster/slower
+       PERFORMANCE OPTIMIZED: Removed transform-heavy animations for better performance
+       ═══════════════════════════════════════════════════════════════════════════════ */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-luxury: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Animation keyframes */
-    --animate-bounce: bounce 1s infinite;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* === SIDEBAR SYSTEM === */
+    --sidebar-background: var(--gray-50);
+    --sidebar-foreground: var(--gray-800);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--gray-100);
+    --sidebar-accent-foreground: var(--gray-700);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
   }
 
-  .dark {
-    /* Dark mode - Black background with white text */
-    --background: 0 0% 8%;
-    --foreground: 0 0% 98%;
-    
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 8%;
-    --primary-hover: 0 0% 85%;
-    
-    --accent-green: 0 0% 75%;
-    --accent-green-light: 0 0% 85%;
-
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 98%;
-    --card-hover: 0 0% 16%;
-
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 98%;
-
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 0 0% 22%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 25%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 100%;
-    
-    /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 95%) 0%, hsl(0 0% 85%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(0 0% 25%) 0%, hsl(0 0% 20%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 12%) 0%, hsl(0 0% 8%) 100%);
-    
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 30px rgba(255, 255, 255, 0.1);
-    
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  /* ═══════════════════════════════════════════════════════════════════════════════
+     DARK MODE REMOVED - LIGHT MODE ONLY FOR OPTIMAL READABILITY
+     All black/dark elements are now clearly marked for easy tweaking
+     ═══════════════════════════════════════════════════════════════════════════════ */
 }
 
+/* === BASE STYLES === */
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Custom animations */
+  /* Typography scale for premium feel */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* === LUXURY ANIMATIONS === */
   @keyframes bounce {
     0%, 20%, 53%, 80%, 100% {
       transform: translate3d(0,0,0);
@@ -165,11 +192,121 @@ Enhanced version with explicit utilities.
     }
   }
 
+  @keyframes luxuryFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes luxurySlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes goldShimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Animation utilities */
   .animate-bounce {
     animation: bounce 2s infinite;
   }
 
-  /* Hide scrollbar for vehicle selector */
+  .animate-luxury-fade {
+    animation: luxuryFadeIn 0.6s ease-out;
+  }
+
+  .animate-luxury-slide {
+    animation: luxurySlideIn 0.5s ease-out;
+  }
+
+  .animate-shimmer {
+    animation: goldShimmer 2s ease-in-out infinite;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   COMPONENT LAYER - Reusable component styles
+   HUMAN TWEAKABLE: Modify these classes to change component appearance
+   PERFORMANCE OPTIMIZED: Removed transform animations on hover
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Premium button styles - OPTIMIZED: no transform on hover */
+  .btn-luxury {
+    background: var(--gradient-luxury);
+    color: hsl(var(--gray-900));
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: var(--transition-luxury);
+    box-shadow: var(--shadow-luxury);
+  }
+
+  .btn-luxury:hover {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Premium card styles - OPTIMIZED: no transform on hover */
+  .card-luxury {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--card-border));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-smooth);
+  }
+
+  .card-luxury:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Luxury text styles */
+  .text-luxury {
+    background: var(--gradient-luxury);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  /* Premium form inputs */
+  .input-luxury {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    transition: var(--transition-smooth);
+  }
+
+  .input-luxury:focus {
+    outline: none;
+    border-color: hsl(var(--luxury-gold));
+    box-shadow: 0 0 0 3px hsla(var(--luxury-gold) / 0.1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UTILITY LAYER - Helper classes and utilities
+   HUMAN TWEAKABLE: Add custom utility classes here for specific design needs
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* Scrollbar utilities - Hide scrollbars while maintaining functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -178,107 +315,520 @@ Enhanced version with explicit utilities.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .scrollbar-luxury::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-luxury::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  .scrollbar-luxury::-webkit-scrollbar-thumb {
+    background: var(--gradient-luxury);
+    border-radius: 4px;
+  }
+
+  .scrollbar-luxury::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--luxury-gold));
+  }
+
+  /* Glass effect utilities */
+  .glass-luxury {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Gradient text utilities - FIXED: No more transparent text issues */
+  .gradient-text-luxury {
+    background: var(--gradient-luxury);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: hsl(var(--luxury-gold)); /* Fallback color */
+  }
+
+  .gradient-text-primary {
+    background: var(--gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: hsl(var(--primary)); /* Fallback color - BLACK ELEMENT - TWEAK HERE */
+  }
 }
 
-@layer components {
-  /* Custom taxi variant buttons */
-  .btn-taxi-primary {
-    @apply bg-gradient-to-r from-black to-gray-900 text-white hover:from-gray-900 hover:to-black;
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
-    @apply shadow-md hover:shadow-lg hover:scale-105;
-  }
-  
-  .btn-taxi-outline {
-    @apply border-2 border-black text-black hover:bg-black hover:text-white;
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
-    @apply bg-transparent hover:shadow-lg;
-  }
-  
-  .btn-taxi-ghost {
-    @apply text-black hover:bg-gray-100 hover:text-black;
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
-    @apply bg-transparent;
-  }
+/* ═══════════════════════════════════════════════════════════════════════════════
+   QUICK TWEAKABLE BLACK/DARK ELEMENTS
+   Use this section to quickly modify colors without hunting through the CSS
+   ═══════════════════════════════════════════════════════════════════════════════ */
 
-  /* Custom gradient backgrounds */
-  .bg-gradient-primary {
-    background: var(--gradient-primary);
-  }
-  
-  .bg-gradient-accent {
-    background: var(--gradient-accent);
-  }
-  
-  .bg-gradient-subtle {
-    background: var(--gradient-subtle);
-  }
+/* HERO TEXT TWEAKS - Make hero text more readable */
+.hero-text-primary {
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  font-weight: 700;
+}
 
-  /* Custom shadow utilities */
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-  
-  .shadow-taxi {
-    box-shadow: var(--shadow-md);
-  }
+.hero-text-secondary {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
 
-  /* Custom card styles */
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-  }
-  
-  .card-premium {
-    @apply bg-white border border-gray-200 rounded-lg shadow-md;
-    @apply hover:shadow-lg hover:border-gray-300 transition-all duration-300;
-  }
+/* BUTTON TEXT OVERRIDES - Easy to modify button text colors */
+.btn-primary-text-override {
+  color: white !important;
+}
 
-  /* Navigation styles */
-  .nav-item {
-    @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
-    @apply hover:bg-gray-100 hover:text-gray-900;
-  }
-  
-  .nav-item-active {
-    @apply bg-black text-white;
-  }
+.btn-secondary-text-override {
+  color: hsl(210 8% 25%) !important; /* Adjust this percentage to lighten/darken */
+}
 
-  /* Form styles */
-  .form-input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
-    @apply focus:ring-2 focus:ring-black focus:border-black;
-    @apply transition-all duration-200;
-  }
-  
-  .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-2;
-  }
+/* CARD TEXT OVERRIDES - Easy to modify card text colors */
+.card-title-override {
+  color: hsl(210 10% 15%) !important; /* Adjust this percentage to lighten/darken */
+}
 
-  /* Status indicators */
-  .status-active {
-    @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold;
-  }
-  
-  .status-pending {
-    @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold;
-  }
-  
-  .status-inactive {
-    @apply bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold;
-  }
+.card-content-override {
+  color: hsl(210 7% 35%) !important; /* Adjust this percentage to lighten/darken */
+}
 
-  /* Layout utilities */
-  .container-taxi {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
-  
-  .section-padding {
-    @apply py-12 md:py-16 lg:py-20;
-  }
-  
-  .text-gradient-primary {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+/* NAVIGATION TEXT OVERRIDES */
+.nav-text-override {
+  color: hsl(210 8% 25%) !important; /* Adjust this percentage to lighten/darken */
+}
+
+/* GENERAL TEXT OVERRIDES - Quick fixes for any black text */
+.text-readable-dark {
+  color: hsl(210 8% 30%) !important; /* Lighter than pure black but still dark */
+}
+
+.text-readable-medium {
+  color: hsl(210 7% 45%) !important; /* Medium gray - good for secondary text */
+}
+
+.text-readable-light {
+  color: hsl(210 6% 60%) !important; /* Light gray - good for captions */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FIX TRANSPARENT TEXT ISSUES - Ensure all text is visible
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force all transparent/invisible text to be visible */
+* {
+  -webkit-text-fill-color: initial !important; /* Remove any transparent text fill */
+}
+
+/* FIX TRANSPARENT CARDS AND FORMS */
+.card, 
+[data-radix-collection-item],
+.bg-card,
+.backdrop-blur-sm {
+  background-color: hsl(var(--card)) !important; /* Force solid white background */
+  opacity: 1 !important; /* Remove any transparency */
+  backdrop-filter: none !important; /* Remove blur effect that causes transparency */
+}
+
+/* FIX BUTTON BORDERS AND BACKGROUNDS */
+.btn, 
+button,
+[role="button"] {
+  border: 1px solid hsl(var(--border)) !important; /* Force visible borders */
+  background-color: hsl(var(--background)) !important; /* Force solid background */
+  opacity: 1 !important;
+}
+
+/* Primary buttons should have solid backgrounds */
+.btn-primary,
+.bg-primary,
+button[class*="primary"] {
+  background-color: hsl(var(--primary)) !important; /* BLACK ELEMENT - TWEAK HERE */
+  border: 1px solid hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+/* Ensure card text is always visible */
+.card, [data-radix-collection-item] {
+  color: hsl(var(--card-foreground)) !important;
+}
+
+/* Ensure all headings are visible - BLACK ELEMENTS */
+h1, h2, h3, h4, h5, h6 {
+  color: hsl(var(--foreground)) !important; /* BLACK ELEMENT - TWEAK HERE */
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Ensure all paragraph text is visible */
+p, span, div {
+  color: inherit;
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Ensure button text is always visible */
+button {
+  -webkit-text-fill-color: initial !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BORDER RADIUS FIXES - Ensure all cards and elements have rounded corners
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force rounded corners on all interactive elements */
+.card, .btn, .input, .select, .popover, .dropdown, .modal {
+  border-radius: var(--radius) !important;
+}
+
+/* Specific rounded corner fixes */
+[data-radix-collection-item], 
+[role="button"], 
+[role="menuitem"],
+.tabs-content,
+.dialog-content {
+  border-radius: var(--radius) !important;
+}
+
+/* TAILWIND OVERRIDES - Force rounded corners on Tailwind classes */
+.rounded-lg,
+.rounded-md,
+.rounded,
+.rounded-t-lg,
+.rounded-b-lg,
+.bg-card,
+.border {
+  border-radius: 0.75rem !important; /* Match --radius value */
+}
+
+/* Button specific styling */
+button,
+.button,
+[type="button"],
+[type="submit"] {
+  border-radius: 0.75rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Card specific styling */
+.max-w-lg,
+.shadow-2xl,
+.backdrop-blur-sm {
+  border-radius: 0.75rem !important;
+  background-color: white !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* REMOVE ALL TRANSPARENCY EFFECTS */
+.bg-card\/95,
+.bg-muted\/50,
+.border-border\/50,
+[class*="/95"],
+[class*="/50"],
+.backdrop-blur-sm,
+.backdrop-blur {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* FORCE SOLID BACKGROUNDS FOR ALL DROPDOWN/POPOVER ELEMENTS */
+[data-radix-popper-content-wrapper],
+[data-radix-select-content],
+[data-radix-dropdown-menu-content],
+[data-radix-popover-content],
+.popover,
+.dropdown-menu,
+.select-content,
+.calendar,
+.date-picker {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  border: 2px solid hsl(var(--border)) !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Account dropdown hover fix */
+.account-dropdown:hover,
+.account-dropdown-content {
+  background-color: white !important;
+  opacity: 1 !important;
+}
+
+/* FORCE ACCOUNT DROPDOWN TO BE SOLID WHITE */
+.absolute.right-0.top-14.w-72,
+.absolute.right-0.top-14,
+[class*="absolute"][class*="right-0"][class*="top-14"] {
+  background-color: white !important;
+  opacity: 1 !important;
+  border: 2px solid #e5e7eb !important;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25) !important;
+}
+
+/* FORCE ALL CARD COMPONENTS TO BE SOLID WHITE */
+.card,
+[class*="card"],
+[data-testid*="card"],
+.shadow-xl {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
+/* Specific dropdown menu fixes */
+[role="menu"],
+[role="listbox"],
+[class*="dropdown"],
+[class*="popover"] {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  border: 2px solid #e5e7eb !important;
+}
+
+/* ULTRA SPECIFIC ACCOUNT DROPDOWN FIX */
+div[class*="absolute"][class*="right-0"][class*="top-14"][class*="w-72"],
+div[class*="shadow-xl"][class*="z-50"],
+.animate-in[class*="fade-in-0"] {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Force all animation classes to be solid */
+.animate-in,
+.fade-in-0,
+.zoom-in-95 {
+  opacity: 1 !important;
+  background-color: inherit !important;
+}
+
+/* WIZARD/STEPPER STEP INDICATORS */
+.w-12.h-12.rounded-full {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force wizard step visibility */
+[class*="w-12"][class*="h-12"][class*="rounded-full"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+}
+
+/* Ensure step indicators are never transparent */
+.bg-black.border-black,
+.bg-green-500.border-green-500,
+.border-gray-300,
+.border-gray-200 {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force wizard step buttons to be visible and clickable */
+button[class*="w-12"][class*="h-12"][class*="rounded-full"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ensure step connector lines are visible */
+.w-16.h-0\.5,
+.w-24.h-0\.5,
+[class*="w-16"][class*="h-0.5"],
+[class*="w-24"][class*="h-0.5"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Specific fixes for calendar and datetime selector */
+.calendar,
+.datetime-selector,
+[role="dialog"],
+[role="listbox"],
+[role="menu"] {
+  background-color: white !important;
+  opacity: 1 !important;
+  border: 2px solid hsl(var(--border)) !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Override any remaining transparency classes */
+.bg-transparent {
+  background-color: white !important;
+}
+
+/* TABS STYLING - NO GREEN COLORS */
+[data-state="active"] {
+  background-color: white !important;
+  color: black !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
+}
+
+/* Remove any primary color from tabs */
+.data-\[state\=active\]\:bg-primary,
+[data-state="active"].bg-primary {
+  background-color: white !important;
+  color: black !important;
+}
+
+/* OVERRIDE ALL PRIMARY COLORS TO BLACK/WHITE THEME */
+.bg-primary\/5,
+.bg-primary\/10,
+.bg-primary\/20,
+.border-primary\/20,
+.border-primary\/50 {
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+}
+
+/* Calendar specific fixes */
+.rdp-day_selected {
+  background-color: black !important;
+  color: white !important;
+}
+
+/* Ensure Calendar component is solid */
+.rdp {
+  background-color: white !important;
+}
+
+.rdp-month {
+  background-color: white !important;
+}
+
+/* Ensure all button hover states are solid */
+.hover\:bg-muted:hover,
+.hover\:bg-accent:hover,
+.hover\:bg-card:hover {
+  background-color: hsl(var(--muted)) !important;
+  opacity: 1 !important;
+}
+
+/* Fix specific radix-ui portal content */
+[data-radix-portal] {
+  background-color: white !important;
+}
+
+/* Force solid backgrounds on all elements */
+.bg-popover {
+  background-color: white !important;
+  opacity: 1 !important;
+}
+
+.bg-background {
+  background-color: white !important;
+}
+
+.bg-card {
+  background-color: white !important;
+  opacity: 1 !important;
+}
+
+.bg-card-hover {
+  background-color: #f8f9fa !important;
+  opacity: 1 !important;
+}
+
+/* Fix popover foreground text visibility */
+.text-popover-foreground {
+  color: hsl(var(--foreground)) !important;
+}
+.bg-card {
+  background-color: white !important;
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted)) !important;
+}
+
+.bg-primary {
+  background-color: hsl(var(--primary)) !important; /* BLACK ELEMENT - TWEAK HERE */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CONSISTENT BUTTON STYLING - All buttons get same look and feel  
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force consistent button styling */
+button,
+.button,
+[role="button"],
+.btn {
+  border-radius: 0.75rem !important; /* rounded-xl */
+  border: 2px solid transparent !important;
+  transition: all 0.2s ease-in-out !important;
+  font-weight: 500 !important;
+}
+
+/* Primary button style - BLACK ELEMENT */
+button[class*="bg-black"],
+.btn-primary,
+[data-variant="default"] {
+  background-color: black !important; /* BLACK ELEMENT - TWEAK HERE */
+  color: white !important;
+  border-color: black !important;
+}
+
+button[class*="bg-black"]:hover,
+.btn-primary:hover,
+[data-variant="default"]:hover {
+  background-color: #1f1f1f !important; /* BLACK ELEMENT - TWEAK HERE */
+  border-color: #1f1f1f !important;
+}
+
+/* Outline button style */
+button[class*="bg-white"],
+.btn-outline,
+[data-variant="outline"] {
+  background-color: white !important;
+  color: black !important; /* BLACK ELEMENT - TWEAK HERE */
+  border-color: #e5e7eb !important;
+}
+
+button[class*="bg-white"]:hover,
+.btn-outline:hover,
+[data-variant="outline"]:hover {
+  background-color: #f9fafb !important;
+  border-color: #d1d5db !important;
+}
+
+/* Ghost button style */
+[data-variant="ghost"],
+.btn-ghost {
+  background-color: transparent !important;
+  color: black !important; /* BLACK ELEMENT - TWEAK HERE */
+  border-color: transparent !important;
+}
+
+[data-variant="ghost"]:hover,
+.btn-ghost:hover {
+  background-color: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Force Radix slider thumb and track to be perfectly round, regardless of global border-radius overrides */
+[data-radix-slider-thumb],
+[data-radix-slider-thumb]:not([hidden]) {
+  border-radius: 9999px !important;
+}
+[data-radix-slider-track],
+[data-radix-slider-track]:not([hidden]) {
+  border-radius: 9999px !important;
+}
+/* Also target the custom slider classes for extra safety */
+.slider-thumb,
+.slider-track {
+  border-radius: 9999px !important;
 }

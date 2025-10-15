@@ -19,10 +19,9 @@ declare module '@supabase/supabase-js' {
 import { useState } from "react";
 import { useBookings, useUpdateBookingStatus } from "@/hooks/useBookings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CalendarCheck, MapPin, Clock, Euro, User, Car, Phone, MessageCircle, Eye } from "lucide-react";
@@ -31,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDateTime } from "@/utils/formatting";
 import { BookingForm } from "@/components/BookingForm";
 import { Plus } from "lucide-react";
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface Booking {
   id: string;
@@ -81,6 +81,8 @@ export function BookingManager() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(5);
 
   // Use optimized React Query hooks
   const { 
@@ -111,6 +113,8 @@ export function BookingManager() {
   };
 
   // Bookings are already filtered by React Query
+  const totalPages = Math.ceil(bookings.length / perPage);
+  const paginatedBookings = bookings.slice((page - 1) * perPage, page * perPage);
 
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -135,229 +139,237 @@ export function BookingManager() {
   }
 
   return (
-    <Card>
+    <Card className="shadow border border-border bg-background">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarCheck className="w-5 h-5 text-primary" />
-              Boekingsbeheer
-            </CardTitle>
-            <p className="text-muted-foreground mt-2">
-              Beheer alle ritten en boekingen in het systeem
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Boeking toevoegen
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Nieuwe boeking toevoegen</DialogTitle>
-                </DialogHeader>
-                <div className="max-h-[75vh] overflow-y-auto p-1">
-                  <BookingForm
-                    onBookingSuccess={() => {
-                      setIsBookingDialogOpen(false);
-                      loadBookings();
-                    }}
-                    onBookingCancel={() => setIsBookingDialogOpen(false)}
-                    showCancelButton={true}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle statussen</SelectItem>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter betaling" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle betalingen</SelectItem>
-                {paymentStatusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <CardTitle>Boekingen overzicht</CardTitle>
+        <div className="flex items-center gap-4 mt-4">
+          <label className="text-muted-foreground text-sm">Aantal per pagina:</label>
+          <select value={perPage} onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1">
+            {[5, 10, 20, 50].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
         </div>
       </CardHeader>
       <CardContent>
-        {bookings.length === 0 ? (
-          <div className="text-center py-12">
-            <CalendarCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Geen boekingen</h3>
-            <p className="text-muted-foreground mb-4">
-              {bookings.length === 0 
-                ? "Er zijn nog geen boekingen in het systeem."
-                : "Geen boekingen gevonden met de huidige filters."
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Datum & Tijd</TableHead>
-                  <TableHead>Route</TableHead>
-                  <TableHead>Klant</TableHead>
-                  <TableHead>Voertuig</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Betaling</TableHead>
-                  <TableHead>Kosten</TableHead>
-                  <TableHead>Acties</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((booking) => {
-                  const statusBadge = getStatusBadge(booking.status);
-                  const paymentBadge = getPaymentStatusBadge(booking.payment_status);
-                  
-                  return (
-                    <TableRow key={booking.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">
-                              {new Date(booking.scheduled_time).toLocaleDateString('nl-NL')}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(booking.scheduled_time).toLocaleTimeString('nl-NL', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
+        <div className="overflow-x-auto">
+          <Table className="min-w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Datum & Tijd</TableHead>
+                <TableHead>Route</TableHead>
+                <TableHead>Klant</TableHead>
+                <TableHead>Voertuig</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Betaling</TableHead>
+                <TableHead>Kost</TableHead>
+                <TableHead>Acties</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedBookings.map((booking: Booking) => {
+                const statusBadge = getStatusBadge(booking.status);
+                const paymentBadge = getPaymentStatusBadge(booking.payment_status);
+                return (
+                  <TableRow key={booking.id} className="hover:bg-muted/50 transition">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">
+                            {new Date(booking.scheduled_time).toLocaleDateString('nl-NL')}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(booking.scheduled_time).toLocaleTimeString('nl-NL', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
                         </div>
-                      </TableCell>
+                      </div>
+                    </TableCell>
                       
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm font-medium truncate max-w-32">
-                              {booking.pickup_address}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <span className="text-sm text-muted-foreground truncate max-w-32">
-                              {booking.destination_address}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">
-                              {booking.company_name || booking.user_email || "Onbekend"}
-                            </p>
-                            {booking.company_name && booking.user_email && (
-                              <p className="text-xs text-muted-foreground">{booking.user_email}</p>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Car className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {booking.vehicle_name || "Niet toegewezen"}
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm font-medium truncate max-w-32">
+                            {booking.pickup_address}
                           </span>
                         </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Select
-                          value={booking.status}
-                          onValueChange={(value) => handleStatusUpdate(booking.id, value)}
-                        >
-                          <SelectTrigger className="w-32">
-                            <Badge className={statusBadge.color}>
-                              {statusBadge.label}
-                            </Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Badge className={paymentBadge.color}>
-                          {paymentBadge.label}
-                        </Badge>
-                      </TableCell>
-                      
-                      <TableCell>
                         <div className="flex items-center gap-2">
-                          <Euro className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">
-                              {booking.final_cost 
-                                ? formatCurrency(booking.final_cost)
-                                : booking.estimated_cost 
-                                  ? `~${formatCurrency(booking.estimated_cost)}`
-                                  : "TBD"
-                              }
-                            </p>
-                            {booking.estimated_duration && (
-                              <p className="text-xs text-muted-foreground">
-                                ~{booking.estimated_duration} min
-                              </p>
-                            )}
-                          </div>
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span className="text-sm text-muted-foreground truncate max-w-32">
+                            {booking.destination_address}
+                          </span>
                         </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Phone className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">
+                            {booking.company_name || booking.user_email || "Onbekend"}
+                          </p>
+                          {booking.company_name && booking.user_email && (
+                            <p className="text-xs text-muted-foreground">{booking.user_email}</p>
+                          )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {booking.vehicle_name || "Niet toegewezen"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${statusBadge.color}`}>{statusBadge.label}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={paymentBadge.color}>
+                        {paymentBadge.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Euro className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">
+                            {booking.final_cost 
+                              ? formatCurrency(booking.final_cost)
+                              : booking.estimated_cost 
+                                ? `~${formatCurrency(booking.estimated_cost)}`
+                                : "TBD"
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-32">
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          asChild 
+                          variant="outline" 
+                          onClick={() => {
+                            // Open dialog to view booking details
+                            setIsBookingDialogOpen(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Bekijken
+                        </Button>
+                        <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline">
+                              <Eye className="w-4 h-4 mr-2" />
+                              Bekijk
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                              <DialogTitle>Boeking details</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-sm font-medium">Klant</label>
+                                <p className="text-sm">
+                                  {booking.company_name || booking.user_email || "Onbekend"}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Status</label>
+                                <Badge className={statusBadge.color}>
+                                  {statusBadge.label}
+                                </Badge>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Datum & Tijd</label>
+                                <p className="text-sm">
+                                  {formatDateTime(booking.scheduled_time)}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Ophaaladres</label>
+                                <p className="text-sm">
+                                  {booking.pickup_address}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Bestemmingsadres</label>
+                                <p className="text-sm">
+                                  {booking.destination_address}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Voertuig</label>
+                                <p className="text-sm">
+                                  {booking.vehicle_name || "Niet toegewezen"}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Kost</label>
+                                <p className="text-sm">
+                                  {booking.final_cost 
+                                    ? formatCurrency(booking.final_cost)
+                                    : booking.estimated_cost 
+                                      ? `~${formatCurrency(booking.estimated_cost)}`
+                                      : "TBD"
+                                  }
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Betaling</label>
+                                <Badge className={paymentBadge.color}>
+                                  {paymentBadge.label}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <Button 
+                                variant="primary" 
+                                onClick={() => {
+                                  // TODO: Implement edit booking functionality
+                                }}
+                              >
+                                Bewerk boeking
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <div>
+            {/* Pagination info */}
+            <p className="text-sm text-muted-foreground">
+              Pagina {page} van {totalPages}
+            </p>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              disabled={page === 1} 
+              onClick={() => setPage(page - 1)}
+            >
+              Vorige
+            </Button>
+            <Button 
+              variant="outline" 
+              disabled={page === totalPages} 
+              onClick={() => setPage(page + 1)}
+            >
+              Volgende
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

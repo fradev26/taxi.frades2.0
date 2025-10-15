@@ -177,7 +177,8 @@ export const getGoogleMapsConfig = (): GoogleMapsConfig => {
   }
   
   if (!apiKey) {
-    throw new Error('VITE_GOOGLE_MAPS_API_KEY environment variable is not set');
+    console.warn('VITE_GOOGLE_MAPS_API_KEY environment variable is not set - Google Maps disabled');
+    throw new Error('Google Maps API key not configured');
   }
 
   return {

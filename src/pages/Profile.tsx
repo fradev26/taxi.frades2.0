@@ -20,38 +20,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-// import { getCurrentUserProfile, updateUserProfile, UserProfile, UpdateUserProfileData } from "@/services/userService";
+import { getCurrentUserProfile, updateUserProfile, UserProfile, UpdateUserProfileData } from "@/services/userService";
 import { signOut } from "@/lib/supabase";
-// import { LoadingSpinner } from "@/components/ui/loading-spinner";
-
-// Temporary types for testing
-interface UserProfile {
-  id: string;
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  address?: string;
-  company_name?: string;
-  btw_number?: string;
-  company_address?: string;
-  company_phone?: string;
-  tax_category?: string;
-  fiscal_year?: string;
-  accounting_method?: string;
-  tax_notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface UpdateUserProfileData {
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  address?: string;
-  company_name?: string;
-  btw_number?: string;
-}
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -75,7 +46,7 @@ export default function Profile() {
       return;
     }
 
-    if (user) {
+    if (!authLoading && user) {
       loadUserProfile();
     }
   }, [user, authLoading, navigate]);
@@ -83,34 +54,66 @@ export default function Profile() {
   const loadUserProfile = async () => {
     setIsLoading(true);
     try {
-      // Dummy data for testing
-      const data: UserProfile = {
-        id: user?.id || '',
-        email: user?.email || '',
-        first_name: 'Test',
-        last_name: 'User',
-        phone: '',
-        address: '',
-        company_name: '',
-        btw_number: '',
-        company_address: '',
-        company_phone: '',
-        tax_category: '',
-        fiscal_year: '',
-        accounting_method: '',
-        tax_notes: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      const error = null;
+      const { data, error } = await getCurrentUserProfile();
 
       if (error) {
         console.error('Profile loading error:', error);
-        toast({
-          title: "Fout bij laden profiel",
-          description: error.message,
-          variant: "destructive",
-        });
+        
+        // Check for permission denied errors - try to load from localStorage first
+        if (error.message && error.message.includes('permission denied')) {
+          console.log('Permission denied - checking for local data');
+          
+          // Try to load from localStorage
+          const localProfile = localStorage.getItem(`profile_${user!.id}`);
+          let basicProfile;
+          
+          if (localProfile) {
+            try {
+              basicProfile = JSON.parse(localProfile);
+              console.log('Found local profile data');
+            } catch {
+              console.log('Invalid local profile data, creating basic profile');
+            }
+          }
+          
+          // If no local data, create basic profile from auth data
+          if (!basicProfile) {
+            basicProfile = {
+              id: user!.id,
+              email: user!.email || '',
+              first_name: user!.user_metadata?.first_name || '',
+              last_name: user!.user_metadata?.last_name || '',
+              phone: user!.user_metadata?.phone || '',
+              address: '',
+              company_name: '',
+              btw_number: '',
+              created_at: user!.created_at,
+              updated_at: user!.created_at
+            };
+          }
+          
+          setUserProfile(basicProfile);
+          setTempUserInfo({
+            first_name: basicProfile.first_name,
+            last_name: basicProfile.last_name,
+            phone: basicProfile.phone,
+            address: basicProfile.address,
+            company_name: basicProfile.company_name,
+            btw_number: basicProfile.btw_number
+          });
+          
+          toast({
+            title: "Profiel geladen (basisgegevens)",
+            description: "Je profiel is geladen met basisgegevens. Wijzigingen opslaan is mogelijk beperkt.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Fout bij laden profiel",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (data) {
         setUserProfile(data);
         setTempUserInfo({
@@ -150,29 +153,70 @@ export default function Profile() {
 
     setIsSaving(true);
     try {
-      // Dummy save for testing
-      const data = { ...userProfile, ...tempUserInfo };
-      const error = null;
+      const { data, error } = await updateUserProfile(user.id, tempUserInfo);
 
       if (error) {
-        toast({
-          title: "Fout bij opslaan",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error('Save error:', error);
+        
+        // Check for permission denied - save locally instead
+        if ((error.message && error.message.includes('permission denied')) || error.isPermissionError) {
+          console.log('Permission denied - saving locally');
+          
+          // Update the local profile state with new data
+          const updatedProfile = {
+            ...userProfile,
+            ...tempUserInfo,
+            updated_at: new Date().toISOString()
+          };
+          
+          setUserProfile(updatedProfile);
+          setIsEditing(false);
+          
+          // Save to localStorage as backup
+          localStorage.setItem(`profile_${user.id}`, JSON.stringify(updatedProfile));
+          
+          toast({
+            title: "Profiel lokaal opgeslagen",
+            description: "Je wijzigingen zijn lokaal opgeslagen. Database opslaan is momenteel beperkt.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Fout bij opslaan",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (data) {
         setUserProfile(data);
         setIsEditing(false);
+        
+        // Clear any local backup since database save succeeded
+        localStorage.removeItem(`profile_${user.id}`);
+        
         toast({
           title: "Profiel bijgewerkt",
-          description: "Je profielgegevens zijn succesvol opgeslagen.",
+          description: "Je profielgegevens zijn succesvol opgeslagen in de database.",
         });
       }
     } catch (error) {
+      console.error('Unexpected save error:', error);
+      
+      // Fallback: save locally
+      const updatedProfile = {
+        ...userProfile,
+        ...tempUserInfo,
+        updated_at: new Date().toISOString()
+      };
+      
+      setUserProfile(updatedProfile);
+      setIsEditing(false);
+      localStorage.setItem(`profile_${user.id}`, JSON.stringify(updatedProfile));
+      
       toast({
-        title: "Fout bij opslaan",
-        description: "Er is een onverwachte fout opgetreden.",
-        variant: "destructive",
+        title: "Profiel lokaal opgeslagen",
+        description: "Er was een probleem met de database. Je wijzigingen zijn lokaal opgeslagen.",
+        variant: "default",
       });
     } finally {
       setIsSaving(false);
@@ -229,13 +273,35 @@ export default function Profile() {
     return false;
   };
 
-  if (authLoading || isLoading) {
+  // Show loading during auth check
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground mt-4">Authenticatie controleren...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user after auth loading is complete, don't show anything (redirect is happening)
+  if (!user) {
+    return null;
+  }
+
+  // Show loading during profile loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground mt-4">Profiel laden...</p>
           </div>
         </div>
       </div>
@@ -307,7 +373,7 @@ export default function Profile() {
                     className="bg-black text-white hover:bg-gray-800"
                   >
                     {isSaving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <LoadingSpinner size="sm" className="mr-2" />
                     ) : (
                       <Save className="h-4 w-4 mr-2" />
                     )}

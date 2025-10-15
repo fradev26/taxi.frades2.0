@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Users, Shield, Star, CheckCircle } from "lucide-react";
+import { Car, Clock, Users, Shield, Star, CheckCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
@@ -10,53 +10,63 @@ import { Footer } from "@/components/Footer";
 export default function CityToCityRides() {
   const features = [
     {
-      icon: MapPin,
+      icon: Car,
       title: "Lange afstanden",
-      description: "Comfortabele reizen tussen steden in heel België en Europa"
+  description: "Comfortabele reizen tussen steden door heel België en Europa. Ontspan terwijl wij rijden."
     },
     {
       icon: Clock,
       title: "24/7 beschikbaar",
-      description: "Boek op elk moment van de dag, elke dag van de week"
+      description: "Dag en nacht bereikbaar. Boek wanneer het u uitkomt, wij zijn er altijd voor u."
     },
     {
       icon: Users,
       title: "Professionele chauffeurs",
-      description: "Ervaren chauffeurs met kennis van lokale routes"
+      description: "Discrete, ervaren chauffeurs met uitstekende kennis van lokale routes en verkeer."
     },
     {
       icon: Shield,
       title: "Veilig & betrouwbaar",
-      description: "Volledig verzekerde voertuigen en gecertificeerde chauffeurs"
+      description: "Premium voertuigen, volledig verzekerd met gecertificeerde chauffeurs. Uw veiligheid is onze prioriteit."
     }
   ];
 
   const popularRoutes = [
-    { from: "Brussel", to: "Antwerpen", duration: "45 min", price: "€65" },
-    { from: "Gent", to: "Brugge", duration: "30 min", price: "€45" },
-    { from: "Antwerpen", to: "Rotterdam", duration: "1u 15min", price: "€95" },
-    { from: "Brussel", to: "Amsterdam", duration: "2u 30min", price: "€150" }
+    { from: "Amsterdam", to: "Rotterdam", duration: "1u 15min", price: "€85" },
+    { from: "Utrecht", to: "Amsterdam", duration: "45 min", price: "€65" },
+    { from: "Den Haag", to: "Eindhoven", duration: "1u 30min", price: "€95" },
+    { from: "Amsterdam", to: "Brussel", duration: "2u 15min", price: "€150" },
+    { from: "Rotterdam", to: "Antwerpen", duration: "1u 30min", price: "€110" },
+    { from: "Utrecht", to: "Düsseldorf", duration: "2u 45min", price: "€180" }
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-primary/90 to-primary/70 text-primary-foreground py-20">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">
-              City-to-city rides
+      <section className="pt-24 pb-16 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-6">
+              <Car className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+              Stedelijke
+              <br />
+              <span className="text-blue-400">Ritten</span>
             </h1>
-            <p className="text-xl mb-8 opacity-90">
-              Uw stressvrije oplossing voor lange afstand ritten met professionele chauffeurs door heel Europa.
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8 leading-relaxed">
+              Stressvrije lange afstand ritten met professionele chauffeurs door heel België en Europa. 
+              Ontspan terwijl wij zorgen voor een comfortabele reis naar uw bestemming.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" asChild>
-                <Link to="/">Boek nu</Link>
+              <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4" asChild>
+                <Link to="/">
+                  Boek nu
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-black px-8 py-4">
                 Meer informatie
               </Button>
             </div>
@@ -64,72 +74,74 @@ export default function CityToCityRides() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-16">
-        {/* Features Section */}
-        <section className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Waarom kiezen voor onze city-to-city service?
+      {/* Features Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Waarom kiezen voor stedelijke ritten?
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Geniet van comfort, betrouwbaarheid en professionaliteit tijdens uw reis tussen steden.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-                    <feature.icon className="w-8 h-8 text-primary" />
+              <Card key={index} className="border-2 border-gray-200 shadow-2xl rounded-xl text-center">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-6">
+                    <feature.icon className="w-8 h-8 text-blue-600" />
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-4">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Popular Routes */}
-        <section className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
+      {/* Popular Routes */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Populaire routes
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Onze meest geboekte city-to-city verbindingen met indicatieve prijzen.
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Onze meest geboekte stedelijke verbindingen met indicatieve prijzen.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {popularRoutes.map((route, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="border-2 border-gray-200 shadow-2xl rounded-xl hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span className="font-semibold">{route.from}</span>
+                        <span className="font-semibold text-sm">{route.from}</span>
                       </div>
                       <div className="flex-1 border-t-2 border-dashed border-muted mx-2"></div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">{route.to}</span>
-                        <div className="w-3 h-3 bg-primary rounded-full"></div>
+                        <span className="font-semibold text-sm">{route.to}</span>
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {route.duration}
-                      </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      {route.duration}
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">{route.price}</div>
+                      <div className="text-xl font-bold text-foreground">{route.price}</div>
                       <div className="text-xs text-muted-foreground">vanaf</div>
                     </div>
                   </div>
@@ -137,27 +149,31 @@ export default function CityToCityRides() {
               </Card>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA Section */}
-        <section className="text-center bg-muted/30 rounded-lg p-12">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
+      {/* CTA Section */}
+      <section className="py-20 bg-black text-white">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Klaar om te vertrekken?
           </h2>
-          <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-            Boek uw city-to-city rit vandaag nog en ervaar het comfort van professioneel vervoer.
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            Boek uw stedelijke rit vandaag nog en ervaar het comfort van professioneel vervoer tussen steden.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link to="/">Boek uw rit</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
+          <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4" asChild>
+            <Link to="/">
+              Boek uw rit nu
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+        </Button>
+        <Button size="lg" variant="outline" asChild>
               <Link to="/contact">Contact opnemen</Link>
             </Button>
           </div>
         </section>
       </div>
       <Footer />
-    </div>
+  </div>
   );
 }

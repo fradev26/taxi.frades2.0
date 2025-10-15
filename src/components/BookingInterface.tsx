@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookingForm } from "@/components/BookingForm";
-import { CompactHourlyBookingForm } from "@/components/CompactHourlyBookingForm";
+import { SimpleHourlyBookingForm } from "@/components/SimpleHourlyBookingForm";
 import { Car, Clock } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
@@ -43,21 +43,21 @@ export function BookingInterface({ className = "" }: BookingInterfaceProps) {
   }, [searchParams, activeTab]);
 
   return (
-    <Card className={`w-full max-w-lg mx-auto bg-card/95 backdrop-blur-sm border-border/50 shadow-2xl min-h-[600px] ${className}`}>
+    <Card className={`w-full max-w-lg mx-auto bg-white border-2 border-gray-200 shadow-2xl min-h-[600px] rounded-xl overflow-hidden ${className}`}>
       <CardContent className="p-0 max-h-none overflow-visible">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-none rounded-t-lg bg-muted/50 h-12">
+          <TabsList className="grid w-full grid-cols-2 rounded-t-xl bg-gray-100 h-12 border-b border-gray-200 p-1">
             <TabsTrigger 
               value="ride" 
-              className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-200 text-sm text-gray-600 hover:text-black transition-all rounded-lg mx-1"
             >
               <Car className="h-4 w-4" />
-              <span className="hidden xs:inline">Rit boeken</span>
-              <span className="xs:hidden">Rit</span>
+              <span className="hidden xs:inline">Route & Tijd</span>
+              <span className="xs:hidden">Route</span>
             </TabsTrigger>
             <TabsTrigger 
               value="hourly"
-              className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-200 text-sm text-gray-600 hover:text-black transition-all rounded-lg mx-1"
             >
               <Clock className="h-4 w-4" />
               <span className="hidden xs:inline">Per uur</span>
@@ -65,16 +65,16 @@ export function BookingInterface({ className = "" }: BookingInterfaceProps) {
             </TabsTrigger>
           </TabsList>
           
-          <div className="w-full min-h-[520px]">
-            <TabsContent value="ride" className="mt-0 focus-visible:outline-none">
+          <div className="w-full min-h-[520px] rounded-b-xl">
+            <TabsContent value="ride" className="mt-0 focus-visible:outline-none rounded-b-xl">
               <div className="p-4 md:p-6">
                 <BookingForm showCancelButton={false} />
               </div>
             </TabsContent>
             
-            <TabsContent value="hourly" className="mt-0 focus-visible:outline-none">
+            <TabsContent value="hourly" className="mt-0 focus-visible:outline-none rounded-b-xl">
               <div className="p-4 md:p-6">
-                <CompactHourlyBookingForm />
+                <SimpleHourlyBookingForm />
               </div>
             </TabsContent>
           </div>

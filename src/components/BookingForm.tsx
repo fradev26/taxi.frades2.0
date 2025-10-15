@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,7 +97,7 @@ const validateCoordinates = (lat: any, lng: any): { lat: number; lng: number } |
   return { lat: numLat, lng: numLng };
 };
 
-export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButton = false }: BookingFormProps) {
+export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBookingCancel, showCancelButton = false }: BookingFormProps) {
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
   const [stepErrors, setStepErrors] = useState<Record<number, string[]>>({});
@@ -158,31 +158,32 @@ export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, o
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Step validation functions
-  const validateStep1 = (data = formData): boolean => {
+  // Step validation functions - moved here to fix hoisting issue
+  const validateStep1 = useCallback((data?: any): boolean => {
+    const dataToValidate = data || formData;
     return !!(
-      data.pickup?.trim() &&
-      data.destination?.trim() &&
-      data.date &&
-      data.time
+      dataToValidate.pickup?.trim() &&
+      dataToValidate.destination?.trim() &&
+      dataToValidate.date &&
+      dataToValidate.time
     );
-  };
+  }, []); // Remove formData dependency to prevent circular issues
 
-  const validateStep2 = (data = formData): boolean => {
-    return !!(data.vehicleType && data.paymentMethod);
-  };
+  const validateStep2 = useCallback((data?: any): boolean => {
+    const dataToValidate = data || formData;
+    return !!(dataToValidate.vehicleType && dataToValidate.paymentMethod);
+  }, []); // Remove formData dependency
 
-  const validateStep3 = (data = formData): boolean => {
-    const hasPaymentMethod = !!data.paymentMethod;
+  const validateStep3 = useCallback((data?: any): boolean => {
+    const dataToValidate = data || formData;
+    const hasPaymentMethod = !!dataToValidate.paymentMethod;
     const hasGuestInfo = user || (
-      data.guestName?.trim() &&
-      data.guestEmail?.trim() &&
-      data.guestPhone?.trim()
+      dataToValidate.guestName?.trim() &&
+      dataToValidate.guestEmail?.trim() &&
+      dataToValidate.guestPhone?.trim()
     );
     return !!(hasPaymentMethod && hasGuestInfo);
-  };
-
-
+  }, [user]); // Keep only user dependency
 
   // Calculate completed steps
   const completedSteps = useMemo(() => {
@@ -1411,6 +1412,8 @@ export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, o
     setIsSubmitting(false);
   };
 
+  // Step validation functions moved to top of component to fix hoisting issue
+
   // Update step errors when validation changes
   useEffect(() => {
     const errors1: string[] = [];
@@ -1463,8 +1466,8 @@ export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, o
           {/* Step 1: Route & Time */}
           {currentStep === 1 && (
             <>
-              {/* Error display for step 1 */}
-              {stepErrors[1] && stepErrors[1].length > 0 && (
+              {/* Error display for step 1 - Hidden for cleaner UI */}
+              {/* {stepErrors[1] && stepErrors[1].length > 0 && (
                 <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-3 rounded-md">
                   <ul className="list-disc list-inside space-y-1">
                     {stepErrors[1].map((error, index) => (
@@ -1472,7 +1475,7 @@ export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, o
                     ))}
                   </ul>
                 </div>
-              )}
+              )} */}
 
               {/* From Field */}
               <div className="space-y-2">
@@ -1820,7 +1823,6 @@ export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, o
                         value={formData.guestName || ""}
                         onChange={(e) => updateFormData('guestName', e.target.value)}
                         className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
-                        required
                       />
                     </div>
 
@@ -1836,7 +1838,6 @@ export const BookingForm = React.memo(function BookingForm({ onBookingSuccess, o
                         value={formData.guestEmail || ""}
                         onChange={(e) => updateFormData('guestEmail', e.target.value)}
                         className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
-                        required
                       />
                     </div>
 

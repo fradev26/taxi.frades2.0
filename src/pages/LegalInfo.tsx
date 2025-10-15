@@ -26,7 +26,7 @@ export default function LegalInfo() {
                   <li><strong>BTW-nummer:</strong> BE 0123.456.789</li>
                   <li><strong>Ondernemingsnummer:</strong> 0123.456.789</li>
                   <li><strong>Telefoon:</strong> +32 2 123 45 67</li>
-                  <li><strong>E-mail:</strong> info@frades.be</li>
+                  <li><strong>E-mail:</strong> taxi@frades.be</li>
                   <li><strong>Website:</strong> www.frades.be</li>
                 </ul>
               </div>
@@ -112,7 +112,7 @@ export default function LegalInfo() {
                 Voor juridische vragen of opmerkingen kunt u contact opnemen via:
               </p>
               <ul className="list-none mt-4 space-y-2">
-                <li><strong>E-mail:</strong> legal@frades.be</li>
+                <li><strong>E-mail:</strong> taxi@frades.be</li>
                 <li><strong>Telefoon:</strong> +32 2 123 45 67</li>
                 <li><strong>Post:</strong> FRADES BVBA, Brusselsestraat 123, 1000 Brussel</li>
               </ul>

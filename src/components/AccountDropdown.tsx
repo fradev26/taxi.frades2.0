@@ -9,14 +9,26 @@ import { signOut } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ROUTES } from "@/constants";
 import { cn } from "@/lib/utils";
-import { CompactWalletBalance } from "@/components/WalletBalance";
+import { getCurrentUserProfile } from "@/services/userService";
 
 export function AccountDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Load user profile when component mounts
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        const { data } = await getCurrentUserProfile();
+        setUserProfile(data);
+      }
+    };
+    loadUserProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -76,8 +88,27 @@ export function AccountDropdown() {
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!user?.email) return "U";
-    return user.email.charAt(0).toUpperCase();
+    if (userProfile?.first_name) {
+      return userProfile.first_name.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
+  // Get display name for user
+  const getUserDisplayName = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name} ${userProfile.last_name}`;
+    }
+    if (userProfile?.first_name) {
+      return userProfile.first_name;
+    }
+    if (user?.email) {
+      return user.email;
+    }
+    return "Gebruiker";
   };
 
   return (
@@ -100,62 +131,53 @@ export function AccountDropdown() {
         )} />
       </Button>
 
-      {/* Dropdown Menu - Uber Style */}
+      {/* Dropdown Menu - Clean Icon Style */}
       {isOpen && (
         <Card className={cn(
-          "absolute right-0 top-14 w-72 shadow-xl border-0 z-50 bg-white",
+          "absolute right-0 top-14 w-auto shadow-xl border-2 border-gray-200 z-50 bg-white rounded-xl",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
-        )}>
+        )}
+        style={{ backgroundColor: 'white', opacity: 1 }}>
           <CardContent className="p-0">
             {/* User Info Header */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center">
-                  <span className="text-lg font-medium">
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center">
+                  <span className="text-base font-medium">
                     {getUserInitials()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-base text-gray-900 truncate">
-                    {user?.email || "Gebruiker"}
-                  </p>
-                  <div className="mt-1">
-                    <CompactWalletBalance />
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    5 ⭐ • Lid sinds 2024
+                  <p className="font-semibold text-sm text-gray-900 truncate">
+                    {getUserDisplayName()}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Menu Items */}
-            <div className="py-2">
-              {menuItems.map((item, index) => (
+            {/* Icon Menu Items */}
+            <div className="p-4">
+              <div className="flex items-center gap-2">
+                {menuItems.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={item.onClick}
+                    title={item.label}
+                    className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors duration-150"
+                  >
+                    <item.icon className="w-5 h-5 text-gray-700" />
+                  </button>
+                ))}
+                
+                {/* Logout Button */}
                 <button
-                  key={index}
-                  onClick={item.onClick}
-                  className="w-full flex items-center gap-4 px-6 py-4 text-sm hover:bg-gray-50 transition-colors duration-150"
+                  onClick={handleSignOut}
+                  title="Uitloggen"
+                  className="w-10 h-10 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors duration-150"
                 >
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <item.icon className="w-4 h-4 text-gray-700" />
-                  </div>
-                  <span className="flex-1 text-left font-medium text-gray-900">{item.label}</span>
+                  <LogOut className="w-5 h-5 text-red-600" />
                 </button>
-              ))}
-            </div>
-
-            {/* Logout Button */}
-            <div className="border-t border-gray-100 pt-2">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-4 px-6 py-4 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
-              >
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <LogOut className="w-4 h-4 text-red-600" />
-                </div>
-                <span className="font-medium">Uitloggen</span>
-              </button>
+              </div>
             </div>
           </CardContent>
         </Card>

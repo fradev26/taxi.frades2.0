@@ -1,0 +1,14 @@
+/* Force Radix slider thumb and track to be perfectly round, regardless of global border-radius overrides */
+[data-radix-slider-thumb],
+[data-radix-slider-thumb]:not([hidden]) {
+  border-radius: 9999px !important;
+}
+[data-radix-slider-track],
+[data-radix-slider-track]:not([hidden]) {
+  border-radius: 9999px !important;
+}
+/* Also target the custom slider classes for extra safety */
+.slider-thumb,
+.slider-track {
+  border-radius: 9999px !important;
+}

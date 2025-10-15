@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HourlyBookingForm } from "@/components/HourlyBookingForm";
+import { SimpleHourlyBookingForm } from "@/components/SimpleHourlyBookingForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -208,10 +208,8 @@ export default function HourlyBooking() {
         {/* Booking Form */}
         <Card className="w-full max-w-lg mx-auto bg-card/95 backdrop-blur-sm border-border/50 shadow-2xl">
           <CardContent className="p-6">
-            <HourlyBookingForm
+            <SimpleHourlyBookingForm
               onBookingSuccess={handleBookingSuccess}
-              onBookingCancel={handleBookingCancel}
-              showCancelButton={false}
             />
           </CardContent>
         </Card>

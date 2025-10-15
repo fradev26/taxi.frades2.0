@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,7 +104,7 @@ interface HourlyBookingFormProps {
   showCancelButton?: boolean;
 }
 
-export const HourlyBookingForm = React.memo(function HourlyBookingForm({ 
+export const HourlyBookingForm = memo(function HourlyBookingForm({ 
   onBookingSuccess, 
   onBookingCancel, 
   showCancelButton = false 
@@ -305,7 +305,7 @@ export const HourlyBookingForm = React.memo(function HourlyBookingForm({
     }
 
     if (bookingData.duration < 1 || bookingData.duration > 12) {
-      newErrors.duration = "Duur moet tussen 1 en 12 uur zijn";
+  newErrors.duration = "Duur moet tussen 1 en 24 uur zijn";
     }
 
     // Guest booking validation - required for all payment methods except invoice
@@ -375,61 +375,85 @@ export const HourlyBookingForm = React.memo(function HourlyBookingForm({
     }
   };
 
-  // Initialize Google Maps
+  // Initialize Google Maps lazily
   useEffect(() => {
+    let isMounted = true;
+    
     const setupGoogleMaps = async () => {
       try {
+        // Only load Google Maps when component is mounted and focused
+        if (!isMounted) return;
+        
         // Load Google Maps API if not already loaded
         if (!isGoogleMapsAPILoaded()) {
           await initializeGoogleMaps();
         }
 
+        // Check if still mounted after async operation
+        if (!isMounted) return;
+
         // Wait for API to be ready
         await waitForGoogleMapsAPI();
         
-        setGoogleMapsLoaded(true);
-        setupAutocomplete();
+        if (isMounted) {
+          setGoogleMapsLoaded(true);
+          setupAutocomplete();
+        }
       } catch (error) {
-        console.error('Failed to load Google Maps:', error);
-        toast({
-          title: "Google Maps niet beschikbaar",
-          description: "Kaart functionaliteit is beperkt. U kunt nog steeds handmatig adressen invoeren.",
-          variant: "default",
-        });
+        if (isMounted) {
+          console.error('Failed to load Google Maps:', error);
+          // Show toast to user about maps not working
+          toast({
+            title: "Locatie autocomplete niet beschikbaar",
+            description: "U kunt nog steeds handmatig een adres invoeren.",
+            variant: "destructive",
+          });
+          setGoogleMapsLoaded(false);
+        }
       }
     };
 
-    setupGoogleMaps();
+    // Delay loading to avoid blocking initial render
+    const timer = setTimeout(setupGoogleMaps, 500);
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Setup autocomplete for pickup location
   const setupAutocomplete = () => {
     if (!window.google || !pickupInputRef.current) return;
 
-    const pickupAutocomplete = new window.google.maps.places.Autocomplete(
-      pickupInputRef.current,
-      {
-        componentRestrictions: { country: "be" },
-        fields: ["formatted_address", "geometry", "name"]
-      }
-    );
+    try {
+      const pickupAutocomplete = new window.google.maps.places.Autocomplete(
+        pickupInputRef.current,
+        {
+          componentRestrictions: { country: "be" },
+          fields: ["formatted_address", "geometry", "name"]
+        }
+      );
 
-    pickupAutocomplete.addListener("place_changed", () => {
-      const place = pickupAutocomplete.getPlace();
-      if (place.geometry && place.geometry.location) {
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        
-        setBookingData(prev => ({
-          ...prev,
-          pickupLocation: place.formatted_address || place.name || "",
-          pickupCoords: { lat, lng }
-        }));
-        
-        setShowLocationSuggestions(false);
-        setErrors(prev => ({ ...prev, pickupLocation: "" }));
-      }
-    });
+      pickupAutocomplete.addListener("place_changed", () => {
+        const place = pickupAutocomplete.getPlace();
+        if (place.geometry && place.geometry.location) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          
+          setBookingData(prev => ({
+            ...prev,
+            pickupLocation: place.formatted_address || place.name || "",
+            pickupCoords: { lat, lng }
+          }));
+          
+          setShowLocationSuggestions(false);
+          setErrors(prev => ({ ...prev, pickupLocation: "" }));
+        }
+      });
+    } catch (error) {
+      console.warn('Google Maps autocomplete niet beschikbaar:', error);
+    }
   };
 
   const selectedVehicle = STANDARD_VEHICLES.find(v => v.id === bookingData.vehicleType);
@@ -454,7 +478,7 @@ export const HourlyBookingForm = React.memo(function HourlyBookingForm({
                   <Slider
                     value={[bookingData.duration]}
                     onValueChange={(value) => setBookingData(prev => ({ ...prev, duration: value[0] }))}
-                    max={12}
+                    max={24}
                     min={1}
                     step={0.5}
                     className="w-full"
@@ -466,7 +490,7 @@ export const HourlyBookingForm = React.memo(function HourlyBookingForm({
                   <span className="font-semibold text-lg text-primary">
                     {bookingData.duration} {bookingData.duration === 1 ? 'uur' : 'uren'}
                   </span>
-                  <span>12 uren</span>
+                  <span>24 uren</span>
                 </div>
 
                 {errors.duration && (

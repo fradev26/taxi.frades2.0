@@ -191,7 +191,7 @@ export default function Login() {
               {/* Google Login */}
               <Button
                 variant="outline"
-                className="w-full h-12 border-2"
+                className="w-full h-12 border-2 border-gray-300 rounded-xl hover:bg-gray-50"
                 onClick={handleGoogleLogin}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -218,7 +218,7 @@ export default function Login() {
               {/* Apple Login */}
               <Button
                 variant="outline"
-                className="w-full h-12 border-2 bg-black hover:bg-gray-900 text-white hover:text-white border-black"
+                className="w-full h-12 border-2 bg-black hover:bg-gray-900 text-white hover:text-white border-black rounded-xl"
                 onClick={handleAppleLogin}
               >
                 <svg className="w-5 h-5 mr-2 fill-white" viewBox="0 0 24 24">
@@ -405,9 +405,7 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  variant="taxi-primary"
-                  size="lg"
-                  className="w-full h-12 text-lg font-semibold"
+                  className="w-full h-12 text-lg font-semibold bg-black text-white hover:bg-gray-900 border-2 border-black rounded-xl"
                   disabled={isLoading}
                 >
                   {isLoading ? (
