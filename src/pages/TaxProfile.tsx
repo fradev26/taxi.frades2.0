@@ -63,7 +63,7 @@ export default function TaxProfile() {
   const loadUserProfile = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await getCurrentUserProfile();
+  const { data, error } = await getCurrentUserProfile();
 
       if (error) {
         console.error('Profile loading error:', error);
@@ -120,7 +120,7 @@ export default function TaxProfile() {
         // New tax fields will be added later when database is updated
       };
 
-      const { data, error } = await updateUserProfile(user.id, updateData);
+  const { data, error } = await updateUserProfile(user.id, updateData);
 
       if (error) {
         toast({

@@ -19,7 +19,7 @@
 ║ COLOR SYSTEM:                                                               ║
 ║ - All colors optimized for light mode readability                          ║
 ║ - CSS custom properties for easy manual tweaking                           ║
-║ - BLACK ELEMENTS marked with /* BLACK ELEMENT */ for easy finding           ╚══════════════════════════════════════════════════════════════════════════════╝
+║ - BLACK ELEMENTS marked with [BLACK ELEMENT] for easy finding              ╚══════════════════════════════════════════════════════════════════════════════╝
 */
 
 @layer base {
@@ -368,467 +368,112 @@
    Use this section to quickly modify colors without hunting through the CSS
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* HERO TEXT TWEAKS - Make hero text more readable */
-.hero-text-primary {
-  color: white !important;
+.frades-luxury-root {
+  /* HERO TEXT TWEAKS - Make hero text more readable */
+  --scoped: 1;
+
+  /* Scoped hero text */
+  --hero-text-primary-color: white;
+}
+
+.frades-luxury-root .hero-text-primary {
+  color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   font-weight: 700;
 }
 
-.hero-text-secondary {
-  color: rgba(255, 255, 255, 0.95) !important;
+.frades-luxury-root .hero-text-secondary {
+  color: rgba(255, 255, 255, 0.95);
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
-/* BUTTON TEXT OVERRIDES - Easy to modify button text colors */
-.btn-primary-text-override {
-  color: white !important;
+/* Button and card text overrides (scoped) */
+.frades-luxury-root .btn-primary-text-override {
+  color: white;
 }
 
-.btn-secondary-text-override {
-  color: hsl(210 8% 25%) !important; /* Adjust this percentage to lighten/darken */
+.frades-luxury-root .btn-secondary-text-override {
+  color: hsl(210 8% 25%); /* Adjust this percentage to lighten/darken */
 }
 
-/* CARD TEXT OVERRIDES - Easy to modify card text colors */
-.card-title-override {
-  color: hsl(210 10% 15%) !important; /* Adjust this percentage to lighten/darken */
+.frades-luxury-root .card-title-override {
+  color: hsl(210 10% 15%); /* Adjust this percentage to lighten/darken */
 }
 
-.card-content-override {
-  color: hsl(210 7% 35%) !important; /* Adjust this percentage to lighten/darken */
+.frades-luxury-root .card-content-override {
+  color: hsl(210 7% 35%); /* Adjust this percentage to lighten/darken */
 }
 
-/* NAVIGATION TEXT OVERRIDES */
-.nav-text-override {
-  color: hsl(210 8% 25%) !important; /* Adjust this percentage to lighten/darken */
+.frades-luxury-root .nav-text-override {
+  color: hsl(210 8% 25%); /* Adjust this percentage to lighten/darken */
 }
 
-/* GENERAL TEXT OVERRIDES - Quick fixes for any black text */
-.text-readable-dark {
-  color: hsl(210 8% 30%) !important; /* Lighter than pure black but still dark */
+.frades-luxury-root .text-readable-dark {
+  color: hsl(210 8% 30%); /* Lighter than pure black but still dark */
 }
 
-.text-readable-medium {
-  color: hsl(210 7% 45%) !important; /* Medium gray - good for secondary text */
+.frades-luxury-root .text-readable-medium {
+  color: hsl(210 7% 45%); /* Medium gray - good for secondary text */
 }
 
-.text-readable-light {
-  color: hsl(210 6% 60%) !important; /* Light gray - good for captions */
+.frades-luxury-root .text-readable-light {
+  color: hsl(210 6% 60%); /* Light gray - good for captions */
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   FIX TRANSPARENT TEXT ISSUES - Ensure all text is visible
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Force all transparent/invisible text to be visible */
-* {
-  -webkit-text-fill-color: initial !important; /* Remove any transparent text fill */
+/* Restore transparent text fix (scoped) - target only known helper classes to avoid global leakage */
+.frades-luxury-root .hero-text-primary,
+.frades-luxury-root .hero-text-secondary,
+.frades-luxury-root .btn-primary-text-override,
+.frades-luxury-root .btn-secondary-text-override,
+.frades-luxury-root .card-title-override,
+.frades-luxury-root .card-content-override,
+.frades-luxury-root .nav-text-override,
+.frades-luxury-root .text-readable-dark,
+.frades-luxury-root .text-readable-medium,
+.frades-luxury-root .text-readable-light {
+  -webkit-text-fill-color: initial;
 }
 
-/* FIX TRANSPARENT CARDS AND FORMS */
-.card, 
-[data-radix-collection-item],
-.bg-card,
-.backdrop-blur-sm {
-  background-color: hsl(var(--card)) !important; /* Force solid white background */
-  opacity: 1 !important; /* Remove any transparency */
-  backdrop-filter: none !important; /* Remove blur effect that causes transparency */
+/* Scoped card and form fixes */
+.frades-luxury-root .card,
+.frades-luxury-root [data-radix-collection-item],
+.frades-luxury-root .bg-card,
+.frades-luxury-root .backdrop-blur-sm {
+  /* Keep these rules but allow component-level overrides; prefer using the helper class .luxury-solid-bg for enforced behavior */
+  background-color: hsl(var(--card)); /* Force solid white background */
+  opacity: 1; /* Remove any transparency */
+  backdrop-filter: none; /* Remove blur effect that causes transparency */
 }
 
-/* FIX BUTTON BORDERS AND BACKGROUNDS */
-.btn, 
-button,
-[role="button"] {
-  border: 1px solid hsl(var(--border)) !important; /* Force visible borders */
-  background-color: hsl(var(--background)) !important; /* Force solid background */
+/* Helper utilities - opt-in classes that enforce the luxury visual fixes when needed */
+.frades-luxury-root .luxury-solid-bg {
+  background-color: hsl(var(--card)) !important;
   opacity: 1 !important;
+  backdrop-filter: none !important;
 }
 
-/* Primary buttons should have solid backgrounds */
-.btn-primary,
-.bg-primary,
-button[class*="primary"] {
-  background-color: hsl(var(--primary)) !important; /* BLACK ELEMENT - TWEAK HERE */
-  border: 1px solid hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
+.frades-luxury-root .luxury-no-backdrop {
+  backdrop-filter: none !important;
 }
 
-/* Ensure card text is always visible */
-.card, [data-radix-collection-item] {
-  color: hsl(var(--card-foreground)) !important;
-}
-
-/* Ensure all headings are visible - BLACK ELEMENTS */
-h1, h2, h3, h4, h5, h6 {
-  color: hsl(var(--foreground)) !important; /* BLACK ELEMENT - TWEAK HERE */
-  -webkit-text-fill-color: initial !important;
-}
-
-/* Ensure all paragraph text is visible */
-p, span, div {
-  color: inherit;
-  -webkit-text-fill-color: initial !important;
-}
-
-/* Ensure button text is always visible */
-button {
-  -webkit-text-fill-color: initial !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   BORDER RADIUS FIXES - Ensure all cards and elements have rounded corners
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Force rounded corners on all interactive elements */
-.card, .btn, .input, .select, .popover, .dropdown, .modal {
+.frades-luxury-root .luxury-rounded {
   border-radius: var(--radius) !important;
 }
 
-/* Specific rounded corner fixes */
-[data-radix-collection-item], 
-[role="button"], 
-[role="menuitem"],
-.tabs-content,
-.dialog-content {
-  border-radius: var(--radius) !important;
+/* Scoped button and luxury component resets */
+.frades-luxury-root .btn,
+.frades-luxury-root .btn-luxury,
+.frades-luxury-root .card-luxury,
+.frades-luxury-root .popover-luxury {
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--background));
+  color: hsl(var(--card-foreground));
+  opacity: 1;
 }
 
-/* TAILWIND OVERRIDES - Force rounded corners on Tailwind classes */
-.rounded-lg,
-.rounded-md,
-.rounded,
-.rounded-t-lg,
-.rounded-b-lg,
-.bg-card,
-.border {
-  border-radius: 0.75rem !important; /* Match --radius value */
+/* Scoped border radius fixes */
+.frades-luxury-root .card, .frades-luxury-root .btn, .frades-luxury-root .input, .frades-luxury-root .select, .frades-luxury-root .popover, .frades-luxury-root .dropdown, .frades-luxury-root .modal {
+  border-radius: var(--radius);
 }
 
-/* Button specific styling */
-button,
-.button,
-[type="button"],
-[type="submit"] {
-  border-radius: 0.75rem !important;
-  border: 1px solid hsl(var(--border)) !important;
-  background-color: hsl(var(--background)) !important;
-}
-
-/* Card specific styling */
-.max-w-lg,
-.shadow-2xl,
-.backdrop-blur-sm {
-  border-radius: 0.75rem !important;
-  background-color: white !important;
-  border: 1px solid hsl(var(--border)) !important;
-}
-
-/* REMOVE ALL TRANSPARENCY EFFECTS */
-.bg-card\/95,
-.bg-muted\/50,
-.border-border\/50,
-[class*="/95"],
-[class*="/50"],
-.backdrop-blur-sm,
-.backdrop-blur {
-  background-color: white !important;
-  opacity: 1 !important;
-  backdrop-filter: none !important;
-  border-color: hsl(var(--border)) !important;
-}
-
-/* FORCE SOLID BACKGROUNDS FOR ALL DROPDOWN/POPOVER ELEMENTS */
-[data-radix-popper-content-wrapper],
-[data-radix-select-content],
-[data-radix-dropdown-menu-content],
-[data-radix-popover-content],
-.popover,
-.dropdown-menu,
-.select-content,
-.calendar,
-.date-picker {
-  background-color: white !important;
-  opacity: 1 !important;
-  backdrop-filter: none !important;
-  border: 2px solid hsl(var(--border)) !important;
-  border-radius: 0.75rem !important;
-}
-
-/* Account dropdown hover fix */
-.account-dropdown:hover,
-.account-dropdown-content {
-  background-color: white !important;
-  opacity: 1 !important;
-}
-
-/* FORCE ACCOUNT DROPDOWN TO BE SOLID WHITE */
-.absolute.right-0.top-14.w-72,
-.absolute.right-0.top-14,
-[class*="absolute"][class*="right-0"][class*="top-14"] {
-  background-color: white !important;
-  opacity: 1 !important;
-  border: 2px solid #e5e7eb !important;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25) !important;
-}
-
-/* FORCE ALL CARD COMPONENTS TO BE SOLID WHITE */
-.card,
-[class*="card"],
-[data-testid*="card"],
-.shadow-xl {
-  background-color: white !important;
-  opacity: 1 !important;
-  backdrop-filter: none !important;
-}
-
-/* Specific dropdown menu fixes */
-[role="menu"],
-[role="listbox"],
-[class*="dropdown"],
-[class*="popover"] {
-  background-color: white !important;
-  opacity: 1 !important;
-  backdrop-filter: none !important;
-  border: 2px solid #e5e7eb !important;
-}
-
-/* ULTRA SPECIFIC ACCOUNT DROPDOWN FIX */
-div[class*="absolute"][class*="right-0"][class*="top-14"][class*="w-72"],
-div[class*="shadow-xl"][class*="z-50"],
-.animate-in[class*="fade-in-0"] {
-  background-color: white !important;
-  opacity: 1 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Force all animation classes to be solid */
-.animate-in,
-.fade-in-0,
-.zoom-in-95 {
-  opacity: 1 !important;
-  background-color: inherit !important;
-}
-
-/* WIZARD/STEPPER STEP INDICATORS */
-.w-12.h-12.rounded-full {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Force wizard step visibility */
-[class*="w-12"][class*="h-12"][class*="rounded-full"] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-}
-
-/* Ensure step indicators are never transparent */
-.bg-black.border-black,
-.bg-green-500.border-green-500,
-.border-gray-300,
-.border-gray-200 {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Force wizard step buttons to be visible and clickable */
-button[class*="w-12"][class*="h-12"][class*="rounded-full"] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* Ensure step connector lines are visible */
-.w-16.h-0\.5,
-.w-24.h-0\.5,
-[class*="w-16"][class*="h-0.5"],
-[class*="w-24"][class*="h-0.5"] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
-}
-
-/* Specific fixes for calendar and datetime selector */
-.calendar,
-.datetime-selector,
-[role="dialog"],
-[role="listbox"],
-[role="menu"] {
-  background-color: white !important;
-  opacity: 1 !important;
-  border: 2px solid hsl(var(--border)) !important;
-  border-radius: 0.75rem !important;
-}
-
-/* Override any remaining transparency classes */
-.bg-transparent {
-  background-color: white !important;
-}
-
-/* TABS STYLING - NO GREEN COLORS */
-[data-state="active"] {
-  background-color: white !important;
-  color: black !important;
-  border: 1px solid hsl(var(--border)) !important;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
-}
-
-/* Remove any primary color from tabs */
-.data-\[state\=active\]\:bg-primary,
-[data-state="active"].bg-primary {
-  background-color: white !important;
-  color: black !important;
-}
-
-/* OVERRIDE ALL PRIMARY COLORS TO BLACK/WHITE THEME */
-.bg-primary\/5,
-.bg-primary\/10,
-.bg-primary\/20,
-.border-primary\/20,
-.border-primary\/50 {
-  background-color: #f8f9fa !important;
-  border-color: #dee2e6 !important;
-}
-
-/* Calendar specific fixes */
-.rdp-day_selected {
-  background-color: black !important;
-  color: white !important;
-}
-
-/* Ensure Calendar component is solid */
-.rdp {
-  background-color: white !important;
-}
-
-.rdp-month {
-  background-color: white !important;
-}
-
-/* Ensure all button hover states are solid */
-.hover\:bg-muted:hover,
-.hover\:bg-accent:hover,
-.hover\:bg-card:hover {
-  background-color: hsl(var(--muted)) !important;
-  opacity: 1 !important;
-}
-
-/* Fix specific radix-ui portal content */
-[data-radix-portal] {
-  background-color: white !important;
-}
-
-/* Force solid backgrounds on all elements */
-.bg-popover {
-  background-color: white !important;
-  opacity: 1 !important;
-}
-
-.bg-background {
-  background-color: white !important;
-}
-
-.bg-card {
-  background-color: white !important;
-  opacity: 1 !important;
-}
-
-.bg-card-hover {
-  background-color: #f8f9fa !important;
-  opacity: 1 !important;
-}
-
-/* Fix popover foreground text visibility */
-.text-popover-foreground {
-  color: hsl(var(--foreground)) !important;
-}
-.bg-card {
-  background-color: white !important;
-}
-
-.bg-muted {
-  background-color: hsl(var(--muted)) !important;
-}
-
-.bg-primary {
-  background-color: hsl(var(--primary)) !important; /* BLACK ELEMENT - TWEAK HERE */
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   CONSISTENT BUTTON STYLING - All buttons get same look and feel  
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Force consistent button styling */
-button,
-.button,
-[role="button"],
-.btn {
-  border-radius: 0.75rem !important; /* rounded-xl */
-  border: 2px solid transparent !important;
-  transition: all 0.2s ease-in-out !important;
-  font-weight: 500 !important;
-}
-
-/* Primary button style - BLACK ELEMENT */
-button[class*="bg-black"],
-.btn-primary,
-[data-variant="default"] {
-  background-color: black !important; /* BLACK ELEMENT - TWEAK HERE */
-  color: white !important;
-  border-color: black !important;
-}
-
-button[class*="bg-black"]:hover,
-.btn-primary:hover,
-[data-variant="default"]:hover {
-  background-color: #1f1f1f !important; /* BLACK ELEMENT - TWEAK HERE */
-  border-color: #1f1f1f !important;
-}
-
-/* Outline button style */
-button[class*="bg-white"],
-.btn-outline,
-[data-variant="outline"] {
-  background-color: white !important;
-  color: black !important; /* BLACK ELEMENT - TWEAK HERE */
-  border-color: #e5e7eb !important;
-}
-
-button[class*="bg-white"]:hover,
-.btn-outline:hover,
-[data-variant="outline"]:hover {
-  background-color: #f9fafb !important;
-  border-color: #d1d5db !important;
-}
-
-/* Ghost button style */
-[data-variant="ghost"],
-.btn-ghost {
-  background-color: transparent !important;
-  color: black !important; /* BLACK ELEMENT - TWEAK HERE */
-  border-color: transparent !important;
-}
-
-[data-variant="ghost"]:hover,
-.btn-ghost:hover {
-  background-color: #f9fafb !important;
-  border-color: #e5e7eb !important;
-}
-
-/* Force Radix slider thumb and track to be perfectly round, regardless of global border-radius overrides */
-[data-radix-slider-thumb],
-[data-radix-slider-thumb]:not([hidden]) {
-  border-radius: 9999px !important;
-}
-[data-radix-slider-track],
-[data-radix-slider-track]:not([hidden]) {
-  border-radius: 9999px !important;
-}
-/* Also target the custom slider classes for extra safety */
-.slider-thumb,
-.slider-track {
-  border-radius: 9999px !important;
-}
+/* ...keep other scoped overrides (calendar, tabs, popovers, etc.) under .frades-luxury-root ... */

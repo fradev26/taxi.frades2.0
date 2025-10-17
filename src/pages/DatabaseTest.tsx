@@ -16,7 +16,7 @@ export default function DatabaseTest() {
       
       // First check if profile already exists
       const { data: existing } = await supabase
-        .from('users')
+  .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single();
@@ -26,7 +26,7 @@ export default function DatabaseTest() {
         alert('Profile already exists for this user - testing UPDATE instead');
         
         const { data, error } = await supabase
-          .from('users')
+          .from('profiles')
           .update({ first_name: 'Updated Test' })
           .eq('id', user.id)
           .select()
@@ -44,7 +44,7 @@ export default function DatabaseTest() {
       } else {
         // Try INSERT
         const { data, error } = await supabase
-          .from('users')
+          .from('profiles')
           .insert({
             id: user.id,
             email: user.email,
@@ -77,7 +77,7 @@ export default function DatabaseTest() {
       
       // Test basic database connectivity by trying to select from users
       const { data, error } = await supabase
-        .from('users')
+  .from('profiles')
         .select('id')
         .limit(1);
 
@@ -112,7 +112,7 @@ export default function DatabaseTest() {
       // Test SELECT
       console.log('Testing SELECT...');
       const { data: selectData, error: selectError } = await supabase
-        .from('users')
+  .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -129,7 +129,7 @@ export default function DatabaseTest() {
       if (selectData) {
         console.log('Testing UPDATE...');
         const { data: updateData, error: updateError } = await supabase
-          .from('users')
+          .from('profiles')
           .update({ first_name: 'Test Update ' + new Date().getTime() })
           .eq('id', user.id)
           .select()

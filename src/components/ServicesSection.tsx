@@ -50,7 +50,7 @@ const services: ServiceCard[] = [
 
 export function ServicesSection() {
   return (
-    <section className="py-20 bg-muted/30">
+  <section className="py-20 bg-muted/30 luxury-solid-bg">
       <div className="container mx-auto px-4 max-w-7xl">
         {/** BEGIN: UI uit image.png **/}
         <div className="text-center mb-16">
@@ -77,31 +77,30 @@ function ServiceCard({ service }: { service: ServiceCard }) {
   const IconComponent = service.icon;
   
   return (
-  <a href={service.href} tabIndex={0} aria-disabled={service.comingSoon} className={`group overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-gray-200 bg-card shadow-2xl rounded-xl flex flex-col h-full relative focus:outline-none focus:ring-2 focus:ring-emerald-500`}>
-      {/* Icon Header */}
-      <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex flex-col items-center text-center">
+    <a
+      href={service.href}
+      tabIndex={0}
+      aria-disabled={service.comingSoon}
+      className={`group overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-gray-200 bg-card shadow-2xl rounded-xl flex items-center justify-center h-56 w-full relative focus:outline-none focus:ring-2 focus:ring-emerald-500`}
+    >
+      <div className="flex flex-col items-center justify-center text-center px-6">
         <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
           <IconComponent className="w-8 h-8 text-white" />
         </div>
+
         {(service.isNew || service.comingSoon) && (
-          <Badge 
+          <Badge
             className={`absolute top-4 right-4 text-white font-medium px-3 py-1 text-xs ${
-              service.comingSoon 
-                ? 'bg-blue-500 hover:bg-blue-600' 
-                : 'bg-emerald-500 hover:bg-emerald-600'
+              service.comingSoon ? 'bg-blue-500 hover:bg-blue-600' : 'bg-emerald-500 hover:bg-emerald-600'
             }`}
           >
             {service.comingSoon ? 'BINNENKORT' : 'NIEUW'}
           </Badge>
         )}
-        <h3 className="text-xl font-bold text-card-foreground mb-2 leading-tight">
+
+        <h3 className="text-lg font-bold text-card-foreground leading-tight">
           {service.title}
         </h3>
-      </div>
-      <div className="p-6 flex flex-col flex-grow cursor-pointer">
-        <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-grow text-center min-h-[48px] flex items-center justify-center">
-          {service.description}
-        </p>
       </div>
     </a>
   );

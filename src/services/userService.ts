@@ -30,9 +30,9 @@ export interface UpdateUserProfileData {
 
 export const getUserProfile = async (userId: string): Promise<{ data: UserProfile | null; error: any }> => {
   const { data, error } = await supabase
-    .from('users')
+    .from('profiles')
     .select('*')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (error) {
@@ -70,9 +70,9 @@ export const updateUserProfile = async (
   });
 
   const { data, error } = await supabase
-    .from('users')
+    .from('profiles')
     .update(safeUpdates)
-    .eq('id', userId)
+    .eq('user_id', userId)
     .select()
     .single();
 
@@ -123,7 +123,7 @@ export const getCurrentUserProfile = async (): Promise<{ data: UserProfile | nul
   // If profile doesn't exist, try to create one
   if (!profile && !error) {
     const { data: newProfile, error: createError } = await supabase
-      .from('users')
+      .from('profiles')
       .insert({
         id: user.id,
         email: user.email

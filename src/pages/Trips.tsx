@@ -16,14 +16,28 @@ import {
   Navigation as NavigationIcon
 } from "lucide-react";
 
-export default function Trips() {
-  // For demo purposes, start with empty trips to show the empty state
-  const upcomingTrips: any[] = [];
+import { useNavigate } from 'react-router-dom';
 
-  const pastTrips: any[] = [];
+export default function Trips() {
+  // Use the trips hook to fetch real trips for the current user
+  const { trips, isLoading } = (() => {
+    try {
+      // dynamic import to avoid circular deps during build step
+      const mod = require('../hooks/useTrips');
+      return mod.useTrips();
+    } catch (e) {
+      // Fallback for build-time or SSR
+      return { trips: [], isLoading: false };
+    }
+  })();
+
+  const upcomingTrips = (trips || []).filter((t: any) => new Date(t.scheduled_time) > new Date() && t.status !== 'cancelled');
+  const pastTrips = (trips || []).filter((t: any) => new Date(t.scheduled_time) <= new Date() || t.status === 'completed' || t.status === 'cancelled');
+
+  const navigate = useNavigate();
 
   const TripCard = ({ trip, isPast = false }: { trip: any; isPast?: boolean }) => (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => trip?.id && navigate(`${ROUTES.TRIPS}/${trip.id}`)}>
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Trip Header */}
@@ -75,7 +89,7 @@ export default function Trips() {
           </div>
 
           {/* Driver Info */}
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg luxury-solid-bg luxury-rounded">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center">
                 <User className="w-5 h-5 text-primary-foreground" />
@@ -162,39 +176,50 @@ export default function Trips() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="upcoming" className="space-y-4 mt-6">
-              {upcomingTrips.length > 0 ? (
-                <div className="space-y-4">
-                  {upcomingTrips.map((trip) => (
-                    <TripCard key={trip.id} trip={trip} />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  type="trips"
-                  title="Je hebt nog geen ritten gemaakt"
-                  description="Begin je reis met ons! Boek je eerste rit en ervaar onze uitstekende service."
-                  actionLabel="Boek een rit"
-                />
-              )}
-            </TabsContent>
+            {/** Unified empty state copy for both upcoming and past tabs */}
+            {(() => {
+              const emptyTitle = "Je hebt nog geen ritten";
+              const emptyDescription = "";
+              const emptyAction = "Boek je eerste rit";
 
-            <TabsContent value="past" className="space-y-4 mt-6">
-              {pastTrips.length > 0 ? (
-                <div className="space-y-4">
-                  {pastTrips.map((trip) => (
-                    <TripCard key={trip.id} trip={trip} isPast={true} />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  type="trips"
-                  title="Geen ritgeschiedenis"
-                  description="Je ritgeschiedenis verschijnt hier na je eerste rit. Start vandaag nog met reizen!"
-                  actionLabel="Boek je eerste rit"
-                />
-              )}
-            </TabsContent>
+              return (
+                <>
+                  <TabsContent value="upcoming" className="space-y-4 mt-6">
+                    {upcomingTrips.length > 0 ? (
+                      <div className="space-y-4">
+                        {upcomingTrips.map((trip) => (
+                          <TripCard key={trip.id} trip={trip} />
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState
+                        type="trips"
+                        title={emptyTitle}
+                        description={emptyDescription}
+                        actionLabel={emptyAction}
+                      />
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="past" className="space-y-4 mt-6">
+                    {pastTrips.length > 0 ? (
+                      <div className="space-y-4">
+                        {pastTrips.map((trip) => (
+                          <TripCard key={trip.id} trip={trip} isPast={true} />
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState
+                        type="trips"
+                        title={emptyTitle}
+                        description={emptyDescription}
+                        actionLabel={emptyAction}
+                      />
+                    )}
+                  </TabsContent>
+                </>
+              );
+            })()}
           </Tabs>
         </div>
       </div>

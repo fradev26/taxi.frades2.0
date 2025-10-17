@@ -11,9 +11,9 @@ import { VehicleManagement } from "@/components/admin/VehicleManagement";
 import { PricingSettings } from "@/components/admin/PricingSettings";
 import { BookingManagerSimple } from "@/components/admin/BookingManager.simple";
 import { StatsDashboard } from "@/components/admin/StatsDashboard";
-import { SettingsDashboard } from "@/components/admin/SettingsDashboard";
+import AdminSettingsPanel from "@/components/admin/AdminSettingsPanel";
 import { UserManager } from "@/components/admin/UserManager";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+// Sidebar wordt nu direct via AdminSettingsPanel geïntegreerd
 import { DriverManagerNew } from "@/components/admin/DriverManager.new";
 import { useState } from "react";
 import { useBookings } from "@/hooks/useBookings";
@@ -62,26 +62,6 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex">
-      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="flex-1 p-6">
-        <div className="container mx-auto max-w-6xl">
-          <h1 className="text-3xl font-bold flex items-center gap-3 mb-8">
-            <Settings className="w-8 h-8 text-primary" />
-            Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground mb-8">Beheer je taxi-service instellingen</p>
-          <div className="rounded-lg shadow bg-background">
-            {activeTab === "bookings" && <BookingManagerSimple bookings={bookings} />}
-            {activeTab === "pricing" && <PricingSettings />}
-            {activeTab === "fleet" && <VehicleManagement />}
-            {activeTab === "drivers" && <DriverManagerNew />}
-            {activeTab === "users" && <UserManager />}
-            {activeTab === "stats" && <StatsDashboard />}
-            {activeTab === "settings" && <SettingsDashboard />}
-          </div>
-        </div>
-      </main>
-    </div>
+    <AdminSettingsPanel />
   );
 }

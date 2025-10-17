@@ -1,0 +1,31 @@
+name: Seed app_settings and pricing
+
+on:
+  workflow_dispatch:
+    inputs:
+      pgconn:
+        description: 'Optional Postgres connection string to use instead of repository secret'
+        required: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run seed SQL
+        env:
+          PGCONN: ${{ github.event.inputs.pgconn || secrets.PG_CONNECTION_STRING }}
+        run: |
+          if [ -z "$PGCONN" ]; then
+            echo "PG_CONNECTION_STRING secret is not set and no input provided. Set the repository secret 'PG_CONNECTION_STRING' to your production Postgres connection string or provide 'pgconn' input when dispatching the workflow." >&2
+            exit 1
+          fi
+          echo "Running seed SQL against database..."
+          psql "$PGCONN" -f supabase/seeds/seed_app_settings_and_pricing.sql

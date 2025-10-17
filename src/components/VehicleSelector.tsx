@@ -27,14 +27,13 @@ export const VehicleSelector = React.memo(function VehicleSelector({
         Voertuig
       </h3>
       
-      <div className="flex flex-col gap-3 w-full">
+      <div className="flex flex-wrap gap-4 w-full">
         {STANDARD_VEHICLES.map((vehicle) => {
           const isSelected = selectedVehicle === vehicle.id;
-          
           return (
             <div
               key={vehicle.id}
-              className="cursor-pointer rounded-lg w-full flex items-center p-4"
+              className="cursor-pointer rounded-lg flex items-center p-4 flex-shrink-0"
               onClick={() => onVehicleSelect(vehicle.id)}
               style={{
                 backgroundColor: isSelected ? 'white' : 'black',
@@ -42,7 +41,10 @@ export const VehicleSelector = React.memo(function VehicleSelector({
                 minHeight: '70px',
                 border: '1px solid transparent',
                 borderRadius: '8px',
-                transition: 'all 0.2s ease-in-out'
+                transition: 'all 0.2s ease-in-out',
+                // Make cards wider by default, allow wrapping
+                minWidth: '360px',
+                width: 'calc(33.333% - 16px)'
               }}
             >
               {/* Vehicle Icon */}
@@ -84,7 +86,7 @@ export const VehicleSelector = React.memo(function VehicleSelector({
 
               {/* Pricing Info */}
               {showPricing && (
-                <div className="flex items-center justify-end ml-4 min-w-[80px]">
+                <div className="flex items-center justify-end ml-4 min-w-[100px]">
                   <div 
                     style={{
                       color: isSelected ? 'black' : 'white',

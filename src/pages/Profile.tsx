@@ -54,7 +54,7 @@ export default function Profile() {
   const loadUserProfile = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await getCurrentUserProfile();
+  const { data, error } = await getCurrentUserProfile();
 
       if (error) {
         console.error('Profile loading error:', error);
@@ -153,7 +153,7 @@ export default function Profile() {
 
     setIsSaving(true);
     try {
-      const { data, error } = await updateUserProfile(user.id, tempUserInfo);
+  const { data, error } = await updateUserProfile(user.id, tempUserInfo);
 
       if (error) {
         console.error('Save error:', error);

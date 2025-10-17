@@ -87,7 +87,7 @@ export default function SiteMap() {
               ))}
             </div>
 
-            <div className="mt-12 p-6 bg-muted/50 rounded-lg">
+            <div className="mt-12 p-6 bg-muted/50 rounded-lg luxury-solid-bg luxury-rounded">
               <h3 className="text-lg font-semibold mb-2">Hulp nodig?</h3>
               <p className="text-muted-foreground mb-4">
                 Kunt u niet vinden wat u zoekt? Neem contact met ons op voor persoonlijke hulp.

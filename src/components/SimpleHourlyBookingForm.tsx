@@ -200,7 +200,7 @@ export const SimpleHourlyBookingForm = memo(function SimpleHourlyBookingForm({
                 </div>
                 
                 <div className="text-center">
-                  <Badge variant="secondary" className="text-lg px-4 py-2">
+                  <Badge variant="secondary" className="px-4 py-1 text-lg">
                     {bookingData.duration} {bookingData.duration === 1 ? 'uur' : 'uren'}
                   </Badge>
                 </div>

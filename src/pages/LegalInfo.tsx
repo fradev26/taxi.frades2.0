@@ -19,7 +19,7 @@ export default function LegalInfo() {
           <CardContent className="prose prose-slate max-w-none">
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Bedrijfsgegevens</h2>
-              <div className="bg-muted/50 p-6 rounded-lg">
+              <div className="bg-muted/50 p-6 rounded-lg luxury-solid-bg luxury-rounded">
                 <ul className="list-none space-y-3">
                   <li><strong>Bedrijfsnaam:</strong> FRADES BVBA</li>
                   <li><strong>Adres:</strong> Brusselsestraat 123, 1000 Brussel, België</li>

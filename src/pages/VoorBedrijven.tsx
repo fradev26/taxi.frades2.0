@@ -257,7 +257,7 @@ const VoorBedrijven = () => {
         </section>
 
         {/* Benefits Section */}
-        <section className="bg-muted/30 rounded-2xl p-8 md:p-12">
+  <section className="bg-muted/30 rounded-2xl p-8 md:p-12 luxury-solid-bg luxury-rounded">
           <div className="text-center space-y-12">
             <h2 className="text-3xl md:text-4xl font-bold">
               Voordelen voor uw bedrijf

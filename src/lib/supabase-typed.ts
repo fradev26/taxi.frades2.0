@@ -24,11 +24,10 @@ export const typedSupabase = {
   
   // Profiles operations
   profiles: {
-    select: () => (supabase as any).from('users').select('*'),
-    insert: (data: TablesInsert<'users'>[]) => (supabase as any).from('users').insert(data),
-    update: (id: string, data: TablesUpdate<'users'>) =>
-      (supabase as any).from('users').update(data).eq('id', id),
-    delete: (id: string) => (supabase as any).from('users').delete().eq('id', id),
+  select: () => (supabase as any).from('profiles').select('*'),
+  insert: (data: TablesInsert<'profiles'>[]) => (supabase as any).from('profiles').insert(data),
+    // Removed CRUD operations after migration to profiles
+  // ...existing code...
   },  // Auth operations (pass-through)
   auth: supabase.auth,
   

@@ -9,6 +9,7 @@ import { DateTimeSelector } from "@/components/ui/datetime-selector";
 import { MapPin, Calendar, Clock, Info, Map, Loader2, User, Mail, Phone, Plus, X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { BookingWizard } from "@/components/ui/booking-wizard";
 import { useToast } from "@/hooks/use-toast";
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { useAuth } from "@/hooks/useAuth";
 import { typedSupabase } from "@/lib/supabase-typed";
 import { supabase } from "@/integrations/supabase/client";
@@ -157,6 +158,7 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
   
   const { toast } = useToast();
   const { user } = useAuth();
+  const { getPricingSettings } = useAppSettings();
 
   // Step validation functions - moved here to fix hoisting issue
   const validateStep1 = useCallback((data?: any): boolean => {
@@ -691,7 +693,46 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
       // and redirect to account creation after payment
       const scheduledTime = new Date(`${formData.date}T${formData.time}`).toISOString();
       
-      // Create a temporary booking record with guest info
+      // Try to create a server-side guest booking (returns booking + token)
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const res = await fetch(`${supabaseUrl}/functions/v1/create-guest-booking`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vehicle_id: selectedVehicleData.id,
+            pickup_address: formData.pickup,
+            pickup_lat: formData.pickupLat,
+            pickup_lng: formData.pickupLng,
+            destination_address: formData.destination,
+            destination_lat: formData.destinationLat,
+            destination_lng: formData.destinationLng,
+            scheduled_time: scheduledTime,
+            payment_method: formData.paymentMethod,
+            guest_name: formData.guestName,
+            guest_email: formData.guestEmail,
+            guest_phone: formData.guestPhone,
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const token = data?.token;
+          // Store token locally so post-payment/signup flow can claim it
+          if (token) {
+            localStorage.setItem('pendingGuestBookingToken', token);
+          }
+
+          toast({ title: 'Doorverwijzing naar betaling', description: 'Je wordt doorverwezen naar de betaalpagina...' });
+          // Redirect to login/signup with token so signup flow can claim booking after payment
+          window.location.href = `/login?postPayment=true&guestBooking=true&token=${token || ''}`;
+          return;
+        }
+      } catch (err) {
+        console.warn('create-guest-booking failed, falling back to client localStorage', err);
+      }
+
+      // Fallback: create pending booking in localStorage when server function is not available
       const guestBookingData = {
         vehicle_id: selectedVehicleData.id,
         pickup_address: formData.pickup,
@@ -708,24 +749,10 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
         guest_phone: formData.guestPhone,
       };
 
-      // Store guest booking info in localStorage for post-payment processing
       localStorage.setItem('pendingGuestBooking', JSON.stringify(guestBookingData));
-
-      // Simulate payment redirect (in real implementation, redirect to payment provider)
-      toast({
-        title: "Doorverwijzing naar betaling",
-        description: "Je wordt doorverwezen naar de betaalpagina...",
-      });
-
-      // Simulate payment success and redirect to account creation
+      toast({ title: 'Doorverwijzing naar betaling', description: 'Je wordt doorverwezen naar de betaalpagina...' });
       setTimeout(() => {
-        // In real implementation, this would happen after successful payment callback
-        toast({
-          title: "Betaling succesvol",
-          description: "Maak nu een account aan om je boeking te voltooien.",
-        });
-
-        // Redirect to login/signup page with a flag for post-payment
+        toast({ title: 'Betaling succesvol', description: 'Maak nu een account aan om je boeking te voltooien.' });
         window.location.href = '/login?postPayment=true&guestBooking=true';
       }, 2000);
 
@@ -1159,12 +1186,33 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
         : new Date();
 
       // Calculate price
+      // Use admin-configured pricing settings as the single source of truth
+      const pricingSettings = getPricingSettings();
+      const overrideVehiclePricing = {
+        base: parseFloat(pricingSettings.baseFare || '0'),
+        perKm: parseFloat(pricingSettings.pricePerKm || '0')
+        // perMinute and minimum will fall back to config defaults if not provided
+      };
+
+      // Merge surcharge overrides with existing config to only override factor values from admin
+      // Import PRICING_CONFIG dynamically to avoid circular imports at top-level
+      const { PRICING_CONFIG } = await import('@/config/pricing');
+      const overrideSurcharges = {
+        ...PRICING_CONFIG.surcharges,
+        nightTime: {
+          ...PRICING_CONFIG.surcharges.nightTime,
+          factor: parseFloat(pricingSettings.nightSurcharge || '' ) || PRICING_CONFIG.surcharges.nightTime.factor
+        }
+      };
+
       const breakdown = PricingService.calculatePriceFromDistance(
         formData.vehicleType,
         distance,
         pickupTime,
         formData.pickup,
-        waypoints.length > 0
+        waypoints.length > 0,
+        overrideVehiclePricing,
+        overrideSurcharges
       );
 
       setPriceBreakdown(breakdown);
@@ -1328,26 +1376,55 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
         status: 'pending'
       };
 
-      // Insert booking into database and return the created row
-      const { data: insertedBooking, error: insertError } = await typedSupabase.bookings
-        .insert([bookingData])
-        .select()
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // Best-effort: mark assigned vehicle as unavailable so it won't be double-booked
+      // Prefer server-side create + lock to avoid race conditions
       try {
-        const { error: updateVehicleError } = await typedSupabase.vehicles
-          .update(selectedVehicleData.id, { available: false, updated_at: new Date().toISOString() });
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const resp = await fetch(`${supabaseUrl}/functions/v1/create-booking-with-lock`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user?.access_token || ''}`
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            vehicle_id: selectedVehicleData.id,
+            pickup_address: formData.pickup,
+            pickup_lat: formData.pickupLat,
+            pickup_lng: formData.pickupLng,
+            destination_address: formData.destination,
+            destination_lat: formData.destinationLat,
+            destination_lng: formData.destinationLng,
+            scheduled_time: scheduledTime,
+            payment_method: formData.paymentMethod,
+          })
+        });
 
-        if (updateVehicleError) {
-          console.warn('Failed to update vehicle availability:', updateVehicleError);
+        if (resp.ok) {
+          const json = await resp.json();
+          // Use server created booking
+          // const insertedBooking = json.booking;
+        } else {
+          // Fallback to client-side insert
+          console.warn('create-booking-with-lock failed, falling back to direct insert');
+          const { data: insertedBooking, error: insertError } = await typedSupabase.bookings
+            .insert([bookingData])
+            .select()
+            .single();
+
+          if (insertError) {
+            throw insertError;
+          }
         }
       } catch (err) {
-        console.warn('Failed to update vehicle availability:', err);
+        console.warn('create-booking-with-lock error, falling back to direct insert', err);
+        const { data: insertedBooking, error: insertError } = await typedSupabase.bookings
+          .insert([bookingData])
+          .select()
+          .single();
+
+        if (insertError) {
+          throw insertError;
+        }
       }
 
       toast({
@@ -1531,7 +1608,7 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
               
               {/* Pickup Suggestions */}
               {showPickupSuggestions && (
-                <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg border max-h-80 overflow-y-auto">
+                <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg border max-h-80 overflow-y-auto luxury-solid-bg luxury-rounded">
                   <CardContent className="p-2">
                     {/* Current Location */}
                     {formData.pickup.length === 0 && (
@@ -1666,7 +1743,7 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
               
               {/* Destination Suggestions */}
               {showDestinationSuggestions && (
-                <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg border max-h-80 overflow-y-auto">
+                <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg border max-h-80 overflow-y-auto luxury-solid-bg luxury-rounded">
                   <CardContent className="p-2">
                     {/* Google Places Results */}
                     {googlePlacesDestinationResults.length > 0 && (
@@ -1805,7 +1882,7 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
             <>
               {/* Guest Information - show when not logged in and not using invoice */}
               {!user && formData.paymentMethod !== 'invoice' && (
-                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border-l-4 border-primary">
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border-l-4 border-primary luxury-solid-bg">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Info className="w-4 h-4" />
                     <span>Contactgegevens voor gastboeking</span>
@@ -1873,7 +1950,7 @@ export const BookingForm = memo(function BookingForm({ onBookingSuccess, onBooki
                 <div className="space-y-2">
                   <div className="relative w-full h-64 rounded-lg border overflow-hidden">
                     {!googleMapsLoaded && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
+                      <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10 luxury-solid-bg">
                         <div className="flex flex-col items-center gap-2">
                           <Loader2 className="w-6 h-6 animate-spin" />
                           <p className="text-sm text-muted-foreground">Kaart wordt geladen...</p>

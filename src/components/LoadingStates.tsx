@@ -144,8 +144,9 @@ interface MapLoadingOverlayProps {
 function MapLoadingOverlay({ className }: MapLoadingOverlayProps) {
   return (
     <div className={cn(
-      "absolute inset-0 bg-background/80 backdrop-blur-sm",
+      "absolute inset-0 bg-background/80",
       "flex items-center justify-center z-10 rounded-lg",
+      "luxury-solid-bg",
       className
     )}>
       <div className="text-center space-y-3">
