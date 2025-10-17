@@ -11,13 +11,20 @@ export const ROUTES = {
   WALLET: '/wallet',
   TRIPS: '/trips',
   ACCOUNT: '/account',
+  PROFILE: '/profiel',
+  TAX_PROFILE: '/belastingprofiel',
   ADMIN: '/admin',
+  HOURLY_BOOKING: '/hourly-booking',
+  BUSINESS_TAX_PROFILE: '/belasting-profiel-zakelijk',
+  OVER_ONS: '/over-ons',
+  VOOR_BEDRIJVEN: '/voor-bedrijven',
   PRIVACY_POLICY: '/privacy-policy',
   COOKIE_POLICY: '/cookie-policy',
   TERMS_OF_SERVICE: '/terms-of-service',
   SALES_TERMS: '/sales-terms',
   LEGAL_INFO: '/legal-info',
   SITE_MAP: '/site-map',
+  REGISTER: '/account/register',
 } as const;
 
 export const TRIP_STATUS = {
@@ -29,9 +36,9 @@ export const TRIP_STATUS = {
 } as const;
 
 export const PAYMENT_METHODS = [
-  { value: 'direct', label: 'Direct Payment' },
-  { value: 'credit', label: 'Credit' },
-  { value: 'invoice', label: 'Invoice' },
+  { value: 'direct', label: 'Direct betalen' },
+  { value: 'credit', label: 'Wallet tegoed' },
+  { value: 'invoice', label: 'Later betalen (factuur)' },
 ] as const;
 
 export const VEHICLE_TYPES = {

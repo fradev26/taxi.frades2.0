@@ -11,22 +11,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Car, Plus, CreditCard as Edit, Trash2, MapPin } from "lucide-react";
+import { typedSupabase } from "@/lib/supabase-typed";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { STANDARD_VEHICLES } from "@/config/vehicles";
 
 interface Vehicle {
   id: string;
-  name: string;
-  type: string;
-  capacity: number;
-  hourly_rate: number;
-  per_km_rate: number;
-  available: boolean;
+  name: string | null;
+  type: string | null;
+  capacity: number | null;
+  hourly_rate: number | null;
+  per_km_rate: number | null;
+  available: boolean | null;
   current_location?: string;
   current_lat?: number;
   current_lng?: number;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface VehicleFormData {
@@ -39,14 +41,11 @@ interface VehicleFormData {
   current_location: string;
 }
 
-const vehicleTypes = [
-  { value: "sedan", label: "Sedan" },
-  { value: "suv", label: "SUV" },
-  { value: "van", label: "Van" },
-  { value: "luxury", label: "Luxury" },
-  { value: "minibus", label: "Minibus" },
-  { value: "eco", label: "Eco" },
-];
+// Use standardized vehicle types from config
+const vehicleTypes = STANDARD_VEHICLES.map(vehicle => ({
+  value: vehicle.id,
+  label: vehicle.name
+}));
 
 export function VehicleManagement() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -116,12 +115,12 @@ export function VehicleManagement() {
   const handleEditVehicle = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
-      name: vehicle.name,
-      type: vehicle.type,
-      capacity: vehicle.capacity.toString(),
-      hourly_rate: vehicle.hourly_rate.toString(),
-      per_km_rate: vehicle.per_km_rate.toString(),
-      available: vehicle.available,
+        name: vehicle.name || "",
+        type: vehicle.type || "",
+        capacity: vehicle.capacity?.toString() || "",
+        hourly_rate: vehicle.hourly_rate?.toString() || "",
+        per_km_rate: vehicle.per_km_rate?.toString() || "",
+        available: vehicle.available ?? true,
       current_location: vehicle.current_location || "",
     });
     setIsDialogOpen(true);
@@ -133,14 +132,21 @@ export function VehicleManagement() {
     setIsSubmitting(true);
 
     try {
+      // Parse numeric values with proper fallbacks
+      const capacity = parseInt(formData.capacity) || null;
+      const hourly_rate = parseFloat(formData.hourly_rate) || null;
+      const per_km_rate = parseFloat(formData.per_km_rate) || null;
+
       const vehicleData = {
-        name: formData.name,
-        type: formData.type,
-        capacity: parseInt(formData.capacity),
-        hourly_rate: parseFloat(formData.hourly_rate),
-        per_km_rate: parseFloat(formData.per_km_rate),
+        name: formData.name || null,
+        type: formData.type || null,
+        capacity,
+        hourly_rate,
+        per_km_rate,
         available: formData.available,
         current_location: formData.current_location || null,
+        current_lat: null,
+        current_lng: null,
         updated_at: new Date().toISOString(),
       };
 
@@ -198,7 +204,7 @@ export function VehicleManagement() {
 
       toast({
         title: "Voertuig verwijderd",
-        description: `${vehicle.name} is succesvol verwijderd uit de vloot.`,
+        description: `${vehicle.name || 'Het voertuig'} is succesvol verwijderd uit de vloot.`,
       });
 
       loadVehicles();
@@ -227,7 +233,7 @@ export function VehicleManagement() {
 
       toast({
         title: "Status bijgewerkt",
-        description: `${vehicle.name} is nu ${!vehicle.available ? 'beschikbaar' : 'niet beschikbaar'}.`,
+        description: `${vehicle.name || 'Voertuig'} is nu ${newAvailability ? 'beschikbaar' : 'niet beschikbaar'}.`,
       });
 
       loadVehicles();
@@ -423,15 +429,15 @@ export function VehicleManagement() {
             <TableBody>
               {vehicles.map((vehicle) => (
                 <TableRow key={vehicle.id}>
-                  <TableCell className="font-medium">{vehicle.name}</TableCell>
+                  <TableCell className="font-medium">{vehicle.name || 'Onbekend'}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {vehicleTypes.find(t => t.value === vehicle.type)?.label || vehicle.type}
+                      {vehicleTypes.find(t => t.value === vehicle.type)?.label || vehicle.type || 'Onbekend'}
                     </Badge>
                   </TableCell>
-                  <TableCell>{vehicle.capacity} personen</TableCell>
-                  <TableCell>€{vehicle.hourly_rate.toFixed(2)}</TableCell>
-                  <TableCell>€{vehicle.per_km_rate.toFixed(3)}</TableCell>
+                  <TableCell>{vehicle.capacity || 0} personen</TableCell>
+                  <TableCell>€{(vehicle.hourly_rate || 0).toFixed(2)}</TableCell>
+                  <TableCell>€{(vehicle.per_km_rate || 0).toFixed(3)}</TableCell>
                   <TableCell>
                     {vehicle.current_location ? (
                       <div className="flex items-center gap-1 text-sm">
@@ -445,9 +451,8 @@ export function VehicleManagement() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Switch
-                        checked={vehicle.available}
+                        checked={vehicle.available || false}
                         onCheckedChange={() => toggleAvailability(vehicle)}
-                        size="sm"
                       />
                       <Badge variant={vehicle.available ? "default" : "secondary"}>
                         {vehicle.available ? "Beschikbaar" : "Niet beschikbaar"}
@@ -473,7 +478,7 @@ export function VehicleManagement() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Voertuig verwijderen</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Weet je zeker dat je {vehicle.name} wilt verwijderen? 
+                              Weet je zeker dat je {vehicle.name || 'dit voertuig'} wilt verwijderen? 
                               Deze actie kan niet ongedaan worden gemaakt.
                             </AlertDialogDescription>
                           </AlertDialogHeader>

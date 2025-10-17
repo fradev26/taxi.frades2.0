@@ -2,7 +2,7 @@
   # Fix Database Issues for Booking and Chauffeur Loading
 
   1. Foreign Key Relationships
-    - Add missing foreign key constraint between profiles.user_id and users.id
+    - Add missing foreign key constraint between profiles.id and users.id
     - Verify all necessary foreign key relationships exist
 
   2. Row Level Security Updates
@@ -21,14 +21,17 @@
 -- Add foreign key constraint between profiles and users if it doesn't exist
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints 
-    WHERE constraint_name = 'profiles_user_id_fkey' 
-    AND table_name = 'profiles'
-  ) THEN
-    ALTER TABLE profiles 
-    ADD CONSTRAINT profiles_user_id_fkey 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+  IF EXISTS (SELECT 1 FROM information_schema.tables 
+             WHERE table_schema = 'public' AND table_name = 'profiles') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints 
+      WHERE constraint_name = 'profiles_id_fkey' 
+      AND table_name = 'profiles'
+    ) THEN
+      ALTER TABLE profiles 
+      ADD CONSTRAINT profiles_id_fkey 
+      FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
   END IF;
 END $$;
 
@@ -38,14 +41,14 @@ CREATE POLICY "Users can read own profile"
   ON profiles
   FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile"
   ON profiles
   FOR UPDATE
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Admins can read all profiles" ON profiles;
 CREATE POLICY "Admins can read all profiles"
@@ -106,7 +109,7 @@ CREATE POLICY "Users can read own bookings"
   ON bookings
   FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 -- Users can create bookings
 DROP POLICY IF EXISTS "Users can create bookings" ON bookings;
@@ -114,21 +117,21 @@ CREATE POLICY "Users can create bookings"
   ON bookings
   FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = id);
 
--- Ensure companies table has proper admin policies
-DROP POLICY IF EXISTS "Admins can read all companies" ON companies;
-CREATE POLICY "Admins can read all companies"
-  ON companies
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users 
-      WHERE auth.users.id = auth.uid() 
-      AND auth.users.email LIKE '%@frades.be'
-    )
-  );
+-- Ensure companies table has proper admin policies (commented out - companies table doesn't exist)
+-- DROP POLICY IF EXISTS "Admins can read all companies" ON companies;
+-- CREATE POLICY "Admins can read all companies"
+--   ON companies
+--   FOR SELECT
+--   TO authenticated
+--   USING (
+--     EXISTS (
+--       SELECT 1 FROM auth.users 
+--       WHERE auth.users.id = auth.uid() 
+--       AND auth.users.email LIKE '%@frades.be'
+--     )
+--   );
 
 -- Ensure vehicles table has proper policies
 DROP POLICY IF EXISTS "Authenticated users can read vehicles" ON vehicles;
@@ -136,7 +139,7 @@ CREATE POLICY "Authenticated users can read vehicles"
   ON vehicles
   FOR SELECT
   TO authenticated
-  USING (available = true);
+  USING (is_available = true);
 
 DROP POLICY IF EXISTS "Admins can manage all vehicles" ON vehicles;
 CREATE POLICY "Admins can manage all vehicles"
@@ -152,5 +155,5 @@ CREATE POLICY "Admins can manage all vehicles"
   );
 
 -- Add index for better performance on user lookups
-CREATE INDEX IF NOT EXISTS idx_profiles_user_id_lookup 
-ON profiles(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_profiles_id_lookup 
+ON profiles(id) WHERE id IS NOT NULL;

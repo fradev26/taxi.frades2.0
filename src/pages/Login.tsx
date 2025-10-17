@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Car, Mail, Phone, User, Eye, EyeOff, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -29,13 +30,64 @@ export default function Login() {
   const [btwNumber, setBtwNumber] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
+
+  // Check URL for guest booking token (used when user is redirected to login after a guest payment)
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const guestTokenFromUrl = urlParams ? urlParams.get('token') : null;
+
+  const [isClaimingBooking, setIsClaimingBooking] = useState(false);
 
   useEffect(() => {
+    // If user is authenticated and there's a guest token in the URL, attempt to claim it
+    const claimBookingIfNeeded = async (token: string | null) => {
+      if (!token) return;
+      setIsClaimingBooking(true);
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const res = await fetch(`${supabaseUrl}/functions/v1/claim-guest-booking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          toast({ title: 'Boeking gekoppeld', description: 'Je boeking is gekoppeld aan je account.' });
+          const bookingId = data?.booking?.id || null;
+          if (bookingId) {
+            // Navigate to booking details if possible
+            navigate(`${ROUTES.TRIPS}/${bookingId}`);
+            return;
+          }
+        } else {
+          toast({ title: 'Koppelen mislukt', description: data?.error || 'Kon boeking niet koppelen.', variant: 'destructive' });
+        }
+      } catch (err) {
+        console.error('Error claiming guest booking:', err);
+        toast({ title: 'Koppelen mislukt', description: 'Er is een fout opgetreden tijdens het koppelen van de boeking.', variant: 'destructive' });
+      } finally {
+        setIsClaimingBooking(false);
+        // If we didn't navigate to booking details above, fall back to home
+        // (this handles failure cases or when no bookingId was returned)
+        if (!window.location.pathname.startsWith(ROUTES.TRIPS)) {
+          navigate(ROUTES.HOME);
+        }
+      }
+    };
+
     if (user && !authLoading) {
-      navigate(ROUTES.HOME);
+      // If we have a guest token in the URL, try to claim it first, otherwise go home
+      if (guestTokenFromUrl) {
+        claimBookingIfNeeded(guestTokenFromUrl);
+      } else {
+        navigate(ROUTES.HOME);
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, session, guestTokenFromUrl, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,7 +242,7 @@ export default function Login() {
               {/* Google Login */}
               <Button
                 variant="outline"
-                className="w-full h-12 border-2"
+                className="w-full h-12 border-2 border-gray-300 rounded-xl hover:bg-gray-50"
                 onClick={handleGoogleLogin}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -217,7 +269,7 @@ export default function Login() {
               {/* Apple Login */}
               <Button
                 variant="outline"
-                className="w-full h-12 border-2 bg-black hover:bg-gray-900 text-white hover:text-white border-black"
+                className="w-full h-12 border-2 bg-black hover:bg-gray-900 text-white hover:text-white border-black rounded-xl"
                 onClick={handleAppleLogin}
               >
                 <svg className="w-5 h-5 mr-2 fill-white" viewBox="0 0 24 24">
@@ -254,7 +306,7 @@ export default function Login() {
                       <Input
                         id="email"
                         type="email"
-                        placeholder="je@voorbeeld.nl"
+                        placeholder="uw.email@voorbeeld.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10 h-12"
@@ -266,17 +318,13 @@ export default function Login() {
                 <TabsContent value="phone" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefoonnummer</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+31 6 12345678"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="pl-10 h-12"
-                      />
-                    </div>
+                    <PhoneInput
+                      id="phone"
+                      value={phone}
+                      onChange={setPhone}
+                      placeholder="123 456 789"
+                      defaultCountry="BE"
+                    />
                   </div>
                 </TabsContent>
 
@@ -335,7 +383,7 @@ export default function Login() {
 
                     {/* Business Fields */}
                     {accountType === 'business' && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/50 luxury-solid-bg luxury-rounded">
                         <h4 className="font-medium flex items-center gap-2">
                           <Building className="w-4 h-4" />
                           Zakelijke gegevens
@@ -408,9 +456,7 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  variant="taxi-primary"
-                  size="lg"
-                  className="w-full h-12 text-lg font-semibold"
+                  className="w-full h-12 text-lg font-semibold bg-black text-white hover:bg-gray-900 border-2 border-black rounded-xl"
                   disabled={isLoading}
                 >
                   {isLoading ? (

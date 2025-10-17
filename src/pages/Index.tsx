@@ -1,10 +1,13 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { BookingForm } from "@/components/BookingForm";
+import { BookingInterface } from "@/components/BookingInterface";
+import { ServicesSection } from "@/components/ServicesSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Car, MapPin, Clock, Shield, Star, Users } from "lucide-react";
-import { APP_CONFIG } from "@/constants";
+import { Car, MapPin, Clock, Shield, Star, Users, UserPlus, User, Building } from "lucide-react";
+import { Link } from "react-router-dom";
+import { APP_CONFIG, ROUTES } from "@/constants";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const features = [
@@ -37,78 +40,98 @@ const Index = () => {
     { label: "Chauffeurs", value: "500+" },
   ];
 
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       
       {/* Hero Section with Booking Form */}
-      <section className="relative min-h-[80vh] flex items-center">
+      <section className="relative flex items-center py-8 md:py-12">
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed"
           style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://www.mercedes-benz.co.za/content/dam/hq/passengercars/cars/s-class/s-class-saloon-wv223-pi/overview/stage/09-2022/images/mercedes-benz-s-class-wv223-stage-3840x1707-09-2022.jpg/1757426873806.jpg?im=Crop,rect=(1923,0,1707,1707);Resize=(828,828)')`
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://www.mercedes-benz.co.za/content/dam/hq/passengercars/cars/s-class/s-class-saloon-wv223-pi/overview/stage/09-2022/images/mercedes-benz-s-class-wv223-stage-3840x1707-09-2022.jpg/1757426873806.jpg?im=Crop,rect=(1923,0,1707,1707);Resize=(828,828)')`,
+            backgroundAttachment: 'fixed'
           }}
         />
         
         {/* Content Container */}
-        <div className="relative z-10 container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
             {/* Left Side - Hero Text */}
-            <div className="text-white space-y-8">
+            <div className="space-y-8">
               <div className="space-y-6">
-                <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+                <h1 className="text-4xl md:text-6xl font-bold leading-tight hero-text-primary">
                   The global chauffeur service
                 </h1>
-                <p className="text-xl md:text-2xl text-white/90 max-w-2xl">
+                <p className="text-xl md:text-2xl max-w-2xl hero-text-secondary">
                   Professionele chauffeursdienst voor al uw vervoersbehoeften. 
                   Betrouwbaar, comfortabel en altijd op tijd.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="taxi-primary" size="lg" className="text-lg px-8">
-                  <Car className="w-5 h-5 mr-2" />
-                  Meer informatie
-                </Button>
-                <Button variant="taxi-outline" size="lg" className="text-lg px-8 border-white text-white hover:bg-white hover:text-black">
-                  <Users className="w-5 h-5 mr-2" />
-                  Voor bedrijven
-                </Button>
-              </div>
+              {/* Hero action buttons (only show when not logged in) */}
+              {!user && (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl opacity-80 hover:opacity-100 transition-opacity" aria-label="Aanmelden particulier">
+                    <Link to="/account/register">
+                      <User className="w-5 h-5 mr-2" />
+                      Aanmelden
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-white rounded-xl opacity-80 hover:opacity-100 transition-opacity" aria-label="Aanmelden bedrijf">
+                    <Link to="/account/register?type=business">
+                      <Building className="w-5 h-5 mr-2" />
+                      Aanmelden
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {/* Right Side - Booking Form */}
+            {/* Right Side - Booking Interface */}
             <div className="flex justify-center lg:justify-end">
-              <BookingForm />
+              <BookingInterface />
             </div>
           </div>
         </div>
       </section>
 
       <div className="container mx-auto px-4 pb-24 md:pb-6">
-        {/* CTA Section */}
-        <section className="py-16 text-center">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Klaar om te vertrekken?
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Download de app en boek direct je eerste rit. 
-              Nieuwe gebruikers krijgen €10 korting!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="taxi-primary" size="lg" className="text-lg px-8">
-                Account aanmaken
-              </Button>
-              <Button variant="taxi-outline" size="lg" className="text-lg px-8">
-                Meer informatie
-              </Button>
+        {/* CTA Section (only show for unauthenticated users) */}
+        {!user && (
+          <section className="py-16 text-center">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Klaar om te vertrekken?
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Download de app en boek direct je eerste rit. 
+                Nieuwe gebruikers krijgen €10 korting!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl hover:bg-gray-800 transition-colors">
+                  <Link to={ROUTES.LOGIN}>
+                    Account aanmaken
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-colors">
+                  <Link to={ROUTES.OVER_ONS}>
+                    Meer informatie
+                  </Link>
+                </Button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
+      
+      {/** BEGIN: UI uit image.png **/}
+      <ServicesSection />
+      {/** EINDE **/}
       
       <Footer />
     </div>

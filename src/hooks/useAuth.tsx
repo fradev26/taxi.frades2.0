@@ -39,9 +39,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
+    // Try to get session, but handle errors gracefully
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Auth session error:', error);
+      // Still set loading to false even if session fetch fails
+      setSession(null);
+      setUser(null);
       setIsLoading(false);
     });
 

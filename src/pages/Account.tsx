@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getCurrentUserProfile, updateUserProfile, UserProfile, UpdateUserProfileData } from "@/services/userService";
 import { signOut } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Account() {
@@ -31,27 +32,96 @@ export default function Account() {
   const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && (!user || !user.id || !user.email)) {
+      toast({
+        title: "Inloggen vereist",
+        description: "Je moet inloggen om je account te beheren.",
+        variant: "destructive",
+      });
       navigate("/login");
       return;
     }
 
-    if (user) {
-      loadUserProfile();
+    if (!authLoading && user && user.id && user.email) {
+      // Additional check to see if the user session is still valid
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          toast({
+            title: "Sessie verlopen",
+            description: "Je sessie is verlopen. Log opnieuw in.",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
+        loadUserProfile();
+      });
     }
   }, [user, authLoading, navigate]);
 
   const loadUserProfile = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await getCurrentUserProfile();
+  const { data, error } = await getCurrentUserProfile();
 
       if (error) {
-        toast({
-          title: "Fout bij laden profiel",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error('Profile loading error:', error);
+        
+        // Check for permission denied errors - try to load from localStorage first
+        if (error.message && error.message.includes('permission denied')) {
+          console.log('Permission denied - checking for local account data');
+          
+          // Try to load from localStorage
+          const localAccount = localStorage.getItem(`account_${user!.id}`);
+          let basicProfile;
+          
+          if (localAccount) {
+            try {
+              basicProfile = JSON.parse(localAccount);
+              console.log('Found local account data');
+            } catch {
+              console.log('Invalid local account data, creating basic profile');
+            }
+          }
+          
+          // If no local data, create basic profile from auth data
+          if (!basicProfile) {
+            basicProfile = {
+              id: user!.id,
+              email: user!.email || '',
+              first_name: user!.user_metadata?.first_name || '',
+              last_name: user!.user_metadata?.last_name || '',
+              phone: user!.user_metadata?.phone || '',
+              address: '',
+              company_name: '',
+              btw_number: '',
+              created_at: user!.created_at,
+              updated_at: user!.created_at
+            };
+          }
+          
+          setUserProfile(basicProfile);
+          setTempUserInfo({
+            first_name: basicProfile.first_name,
+            last_name: basicProfile.last_name,
+            phone: basicProfile.phone,
+            address: basicProfile.address,
+            company_name: basicProfile.company_name,
+            btw_number: basicProfile.btw_number
+          });
+          
+          toast({
+            title: "Account geladen (basisgegevens)",
+            description: "Je account is geladen met basisgegevens. Database toegang is beperkt.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Fout bij laden profiel",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (data) {
         setUserProfile(data);
         setTempUserInfo({
@@ -62,8 +132,21 @@ export default function Account() {
           company_name: data.company_name || '',
           btw_number: data.btw_number || ''
         });
+        toast({
+          title: "Profiel geladen",
+          description: "Je profielgegevens zijn succesvol geladen.",
+        });
+      } else {
+        // This shouldn't happen anymore with the auto-create logic
+        console.error('No profile data returned');
+        toast({
+          title: "Profiel probleem",
+          description: "Er werd geen profieldata gevonden. Probeer de pagina te verversen.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      console.error('Unexpected error loading profile:', error);
       toast({
         title: "Fout bij laden profiel",
         description: "Er is een onverwachte fout opgetreden.",
@@ -79,19 +162,49 @@ export default function Account() {
 
     setIsSaving(true);
     try {
-      const { data, error } = await updateUserProfile(user.id, tempUserInfo);
+  const { data, error } = await updateUserProfile(user.id, tempUserInfo);
 
       if (error) {
-        toast({
-          title: "Fout bij opslaan",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error('Save error:', error);
+        
+        // Check for permission denied - save locally instead
+        if ((error.message && error.message.includes('permission denied')) || error.isPermissionError) {
+          console.log('Permission denied - saving locally');
+          
+          // Update the local profile state with new data
+          const updatedProfile = {
+            ...userProfile,
+            ...tempUserInfo,
+            updated_at: new Date().toISOString()
+          };
+          
+          setUserProfile(updatedProfile);
+          setIsEditing(false);
+          
+          // Save to localStorage as backup
+          localStorage.setItem(`account_${user.id}`, JSON.stringify(updatedProfile));
+          
+          toast({
+            title: "Account lokaal opgeslagen",
+            description: "Je wijzigingen zijn lokaal opgeslagen. Database opslaan is momenteel beperkt.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Fout bij opslaan",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (data) {
         setUserProfile(data);
         setIsEditing(false);
+        
+        // Clear any local backup since database save succeeded
+        localStorage.removeItem(`account_${user.id}`);
+        
         toast({
-          title: "Profiel bijgewerkt",
+          title: "Account bijgewerkt",
           description: "Je profielgegevens zijn succesvol opgeslagen.",
         });
       }
@@ -145,7 +258,28 @@ export default function Account() {
     }
   };
 
-  if (isLoading || authLoading) {
+  // Show loading during auth check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <LoadingSpinner size="lg" className="mx-auto mb-4" />
+            <p className="text-muted-foreground">Authenticatie controleren...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user after auth loading is complete, don't show anything (redirect is happening)
+  if (!user || !user.id || !user.email) {
+    return null;
+  }
+
+  // Show loading during profile loading
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -166,13 +300,18 @@ export default function Account() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <Card className="w-full max-w-md mx-auto">
             <CardContent className="text-center pt-6">
-              <h1 className="text-2xl font-bold mb-4">Profiel niet gevonden</h1>
+              <h1 className="text-2xl font-bold mb-4">Account niet beschikbaar</h1>
               <p className="text-muted-foreground mb-4">
-                Er kon geen profiel worden gevonden voor uw account.
+                Er is een probleem met het laden van je account. Log opnieuw in om dit op te lossen.
               </p>
-              <Button onClick={() => navigate("/login")}>
-                Terug naar login
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={() => navigate("/login")} variant="default">
+                  Inloggen
+                </Button>
+                <Button onClick={() => navigate("/")} variant="outline">
+                  Terug naar hoofdpagina
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -206,7 +345,7 @@ export default function Account() {
                 <h2 className="text-xl font-bold mb-1">
                   {userProfile.first_name} {userProfile.last_name}
                 </h2>
-                <p className="text-muted-foreground mb-4">{userProfile.email}</p>
+                <p className="text-muted-foreground mb-4">{userProfile.email || user?.email || 'Geen email'}</p>
                 <Button variant="taxi-outline" size="sm" className="gap-2">
                   <Edit className="w-4 h-4" />
                   Foto wijzigen
@@ -288,7 +427,7 @@ export default function Account() {
                     <Input
                       id="email"
                       type="email"
-                      value={userProfile.email}
+                      value={userProfile.email || user?.email || ''}
                       disabled={true}
                       className="pl-10 bg-muted"
                     />
@@ -334,11 +473,20 @@ export default function Account() {
           {/* Business Information */}
           {isBusinessAccount && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Building className="w-5 h-5 text-primary" />
                   Zakelijke gegevens
                 </CardTitle>
+                <Button
+                  variant="taxi-outline"
+                  size="sm"
+                  onClick={() => navigate('/belasting-profiel-zakelijk')}
+                  className="gap-2"
+                >
+                  <Building className="w-4 h-4" />
+                  Volledig profiel
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -369,6 +517,11 @@ export default function Account() {
                       placeholder="BE0123456789"
                     />
                   </div>
+                </div>
+                
+                <div className="pt-2 text-sm text-muted-foreground">
+                  Voor een volledig zakelijk profiel met factuurgegevens en betalingsinstellingen, 
+                  gebruik de knop "Volledig profiel" hierboven.
                 </div>
               </CardContent>
             </Card>

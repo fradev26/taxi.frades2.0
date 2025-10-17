@@ -9,13 +9,26 @@ import { signOut } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ROUTES } from "@/constants";
 import { cn } from "@/lib/utils";
+import { getCurrentUserProfile } from "@/services/userService";
 
 export function AccountDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Load user profile when component mounts
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        const { data } = await getCurrentUserProfile();
+        setUserProfile(data);
+      }
+    };
+    loadUserProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -36,14 +49,6 @@ export function AccountDropdown() {
 
   const menuItems = [
     {
-      icon: HelpCircle,
-      label: "Hulp",
-      onClick: () => {
-        // Navigate to help page or open help modal
-        setIsOpen(false);
-      }
-    },
-    {
       icon: Wallet,
       label: "Wallet",
       onClick: () => {
@@ -52,26 +57,18 @@ export function AccountDropdown() {
       }
     },
     {
+      icon: UserCircle,
+      label: "Profiel",
+      onClick: () => {
+        navigate(ROUTES.PROFILE);
+        setIsOpen(false);
+      }
+    },
+    {
       icon: Clock,
       label: "Activiteit",
       onClick: () => {
         navigate(ROUTES.TRIPS);
-        setIsOpen(false);
-      }
-    },
-    {
-      icon: Settings,
-      label: "Beheer het account",
-      onClick: () => {
-        navigate(ROUTES.ACCOUNT);
-        setIsOpen(false);
-      }
-    },
-    {
-      icon: FileText,
-      label: "Belastingprofiel",
-      onClick: () => {
-        // Navigate to tax profile page
         setIsOpen(false);
       }
     }
@@ -91,78 +88,97 @@ export function AccountDropdown() {
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!user?.email) return "U";
-    return user.email.charAt(0).toUpperCase();
+    if (userProfile?.first_name) {
+      return userProfile.first_name.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
+  // Get display name for user
+  const getUserDisplayName = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name} ${userProfile.last_name}`;
+    }
+    if (userProfile?.first_name) {
+      return userProfile.first_name;
+    }
+    if (user?.email) {
+      return user.email;
+    }
+    return "Gebruiker";
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Account Button */}
+      {/* Account Button - Uber Style */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "gap-2 h-10 px-3 transition-all duration-200",
-          isOpen && "bg-accent"
-        )}
+        className="flex items-center gap-3 hover:bg-gray-50 rounded-full px-4 py-2 h-auto"
       >
-        <User className="w-5 h-5 text-foreground" />
+        <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center">
+          <span className="text-sm font-medium">
+            {getUserInitials()}
+          </span>
+        </div>
         <ChevronDown className={cn(
-          "w-4 h-4 transition-transform duration-200",
+          "w-4 h-4 text-gray-600 transition-transform duration-200",
           isOpen && "rotate-180"
         )} />
       </Button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu - Clean Icon Style */}
       {isOpen && (
         <Card className={cn(
-          "absolute right-0 top-12 w-64 shadow-lg border-0 z-50",
-          "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
-        )}>
+          "absolute right-0 top-14 w-auto shadow-xl border-2 border-gray-200 z-50 bg-white rounded-xl",
+          "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200",
+          "luxury-solid-bg luxury-rounded"
+        )}
+        style={{ backgroundColor: 'white', opacity: 1 }}>
           <CardContent className="p-0">
             {/* User Info Header */}
-            <div className="p-4 border-b border-border">
+            <div className="p-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-background border border-border rounded-full flex items-center justify-center">
-                  <UserCircle className="w-6 h-6 text-primary" />
+                <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center">
+                  <span className="text-base font-medium">
+                    {getUserInitials()}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">
-                    {user?.email || "Gebruiker"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Persoonlijk account
+                  <p className="font-semibold text-sm text-gray-900 truncate">
+                    {getUserDisplayName()}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Menu Items */}
-            <div className="py-2">
-              {menuItems.map((item, index) => (
+            {/* Icon Menu Items */}
+            <div className="p-4">
+              <div className="flex items-center gap-2">
+                {menuItems.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={item.onClick}
+                    title={item.label}
+                    className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors duration-150"
+                  >
+                    <item.icon className="w-5 h-5 text-gray-700" />
+                  </button>
+                ))}
+                
+                {/* Logout Button */}
                 <button
-                  key={index}
-                  onClick={item.onClick}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-accent transition-colors duration-150"
+                  onClick={handleSignOut}
+                  title="Uitloggen"
+                  className="w-10 h-10 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors duration-150"
                 >
-                  <item.icon className="w-4 h-4 text-muted-foreground" />
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <LogOut className="w-5 h-5 text-red-600" />
                 </button>
-              ))}
-            </div>
-
-            <Separator />
-
-            {/* Logout Button */}
-            <div className="p-2">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-2 py-3 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors duration-150"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Uitloggen</span>
-              </button>
+              </div>
             </div>
           </CardContent>
         </Card>

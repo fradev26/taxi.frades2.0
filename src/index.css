@@ -1,154 +1,182 @@
+@import url('./slider-fix.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* FRADES Design System - Premium chauffeur service
-All colors MUST be HSL.
+/* 
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           FRADES DESIGN SYSTEM                              ║
+║                     Premium Chauffeur Service Styling                       ║
+║                            LIGHT MODE ONLY                                  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ OPTIMIZATION NOTES:                                                         ║
+║ - Dark mode removed - Light mode only for maximum readability              ║
+║ - Transforms & scales removed from hover states for better performance      ║
+║ - Unused React imports cleaned up                                           ║
+║ - Google Maps loading optimized with lazy loading                           ║
+║ - Black text elements clearly marked for easy tweaking                      ║
+║                                                                              ║
+║ COLOR SYSTEM:                                                               ║
+║ - All colors optimized for light mode readability                          ║
+║ - CSS custom properties for easy manual tweaking                           ║
+║ - BLACK ELEMENTS marked with [BLACK ELEMENT] for easy finding              ╚══════════════════════════════════════════════════════════════════════════════╝
 */
 
 @layer base {
   :root {
-    /* Core brand colors - Black/White theme */
-    --primary: 0 0% 0%;                  /* Pure black */
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 0 0% 10%;
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       BRAND COLORS - Core identity colors for premium taxi service
+       ═══════════════════════════════════════════════════════════════════════════════ */
     
-    /* Accent colors - Grayscale */
-    --accent-green: 0 0% 20%;            /* Dark gray */
-    --accent-green-light: 0 0% 30%;
+    /* PRIMARY BRAND COLOR - Pure black for premium identity */
+    /* BLACK ELEMENT */ --primary: 0 0% 0%;                  /* Pure black - premium brand - TWEAK HERE */
+    --primary-foreground: 0 0% 100%;     /* White text on black */
+    --primary-hover: 0 0% 10%;           /* Subtle hover state - OPTIMIZED: no transform */
     
-    /* Background system */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    /* Luxury accent palette - sophisticated colors with premium feel */
+    --luxury-gold: 43 74% 66%;           /* Elegant gold accent #D4AF37 equivalent */
+    --luxury-gold-light: 43 60% 75%;     /* Lighter gold variant */
+    --luxury-silver: 200 8% 70%;         /* Premium silver */
+    --luxury-platinum: 210 10% 85%;      /* Platinum highlight */
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       GRAYSCALE SYSTEM - Professional color scale for light theme
+       HUMAN TWEAKABLE: Adjust these percentages to modify overall site brightness
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --gray-50: 210 20% 98%;              /* Ultra light background */
+    --gray-100: 210 15% 95%;             /* Light surface */
+    --gray-200: 210 10% 90%;             /* Subtle borders */
+    --gray-300: 210 8% 82%;              /* Disabled states */
+    --gray-400: 210 7% 65%;              /* Placeholder text */
+    --gray-500: 210 6% 48%;              /* Secondary text */
+    /* BLACK ELEMENT */ --gray-600: 210 7% 35%;              /* Primary text - TWEAK HERE */
+    /* BLACK ELEMENT */ --gray-700: 210 8% 25%;              /* Headings - TWEAK HERE */
+    /* BLACK ELEMENT */ --gray-800: 210 10% 15%;             /* Dark text - TWEAK HERE */
+    /* BLACK ELEMENT */ --gray-900: 210 15% 8%;              /* Darkest text - TWEAK HERE */
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       SURFACE SYSTEM - Background and card colors
+       HUMAN TWEAKABLE: Modify card colors for different visual emphasis
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --background: var(--gray-50);        /* Clean white background */
+    /* BLACK ELEMENT */ --foreground: var(--gray-900);       /* Deep black text for contrast - TWEAK HERE */
 
-    /* Cards and surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --card-hover: 0 0% 98%;
+    /* Card system with luxury elevation - OPTIMIZED: no transform on hover */
+    --card: 0 0% 100%;                   /* Pure white cards */
+    /* BLACK ELEMENT */ --card-foreground: var(--gray-800);  /* Dark text on cards - TWEAK HERE */
+    --card-hover: var(--gray-100);       /* Subtle hover state */
+    --card-border: var(--gray-200);      /* Refined border */
 
+    /* Interactive surfaces */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: var(--gray-800);
 
-    /* Secondary and muted */
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 0%;
+    /* Secondary system for depth */
+    --secondary: var(--gray-100);        /* Light gray backgrounds */
+    /* BLACK ELEMENT */ --secondary-foreground: var(--gray-700); /* Readable text - TWEAK HERE */
 
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
+    /* Muted elements for hierarchy */
+    --muted: var(--gray-200);            /* Subtle backgrounds */
+    --muted-foreground: var(--gray-500); /* Secondary text */
 
-    --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent system with luxury touches */
+    --accent: var(--luxury-silver);      /* Premium silver accent */
+    /* BLACK ELEMENT */ --accent-foreground: var(--gray-800); /* Dark text on accent - TWEAK HERE */
 
-    --destructive: 0 84% 60%;
+    /* Status colors */
+    --destructive: 0 84% 60%;            /* Error red */
     --destructive-foreground: 0 0% 100%;
+    --success: 142 69% 58%;              /* Success green */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;               /* Warning amber */
+    --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 0%;
+    /* Interactive elements */
+    --border: var(--gray-300);           /* Subtle borders */
+    --input: var(--gray-300);            /* Input borders */
+    --ring: var(--primary);              /* Focus rings */
 
-    --radius: 0.75rem;
+    /* Design system */
+    --radius: 0.75rem;                   /* Rounded corners */
     
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(0 0% 10%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(0 0% 20%) 0%, hsl(0 0% 30%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       LUXURY GRADIENTS - Sophisticated gradients for premium UI elements
+       HUMAN TWEAKABLE: Adjust gradient angles and stops for different visual effects
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--luxury-gold)) 0%, hsl(var(--luxury-silver)) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--gray-800)) 0%, hsl(var(--gray-900)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(var(--gray-50)) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--gray-50)) 0%, hsl(0 0% 100%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-700)) 50%, hsl(var(--luxury-gold)) 100%);
     
-    /* Shadows */
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-    --shadow-glow: 0 0 30px rgba(0, 0, 0, 0.15);
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       PREMIUM SHADOWS - Elegant shadow system for depth and luxury feel
+       HUMAN TWEAKABLE: Adjust opacity values to make shadows more/less prominent
+       ═══════════════════════════════════════════════════════════════════════════════ */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 24px -4px rgba(0, 0, 0, 0.16);
+    --shadow-xl: 0 16px 48px -8px rgba(0, 0, 0, 0.20);
+    --shadow-luxury: 0 8px 32px -4px rgba(212, 175, 55, 0.15);
+    --shadow-glow: 0 0 24px rgba(212, 175, 55, 0.25);
     
-    /* Animations */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+       ANIMATION SYSTEM - Smooth, luxury-feeling transitions
+       HUMAN TWEAKABLE: Adjust timing values to make animations faster/slower
+       PERFORMANCE OPTIMIZED: Removed transform-heavy animations for better performance
+       ═══════════════════════════════════════════════════════════════════════════════ */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-luxury: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Animation keyframes */
-    --animate-bounce: bounce 1s infinite;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* === SIDEBAR SYSTEM === */
+    --sidebar-background: var(--gray-50);
+    --sidebar-foreground: var(--gray-800);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--gray-100);
+    --sidebar-accent-foreground: var(--gray-700);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
   }
 
-  .dark {
-    /* Dark mode - Black background with white text */
-    --background: 0 0% 8%;
-    --foreground: 0 0% 98%;
-    
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 8%;
-    --primary-hover: 0 0% 85%;
-    
-    --accent-green: 0 0% 75%;
-    --accent-green-light: 0 0% 85%;
-
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 98%;
-    --card-hover: 0 0% 16%;
-
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 98%;
-
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 0 0% 22%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 25%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 100%;
-    
-    /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 95%) 0%, hsl(0 0% 85%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(0 0% 25%) 0%, hsl(0 0% 20%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 12%) 0%, hsl(0 0% 8%) 100%);
-    
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 30px rgba(255, 255, 255, 0.1);
-    
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  /* ═══════════════════════════════════════════════════════════════════════════════
+     DARK MODE REMOVED - LIGHT MODE ONLY FOR OPTIMAL READABILITY
+     All black/dark elements are now clearly marked for easy tweaking
+     ═══════════════════════════════════════════════════════════════════════════════ */
 }
 
+/* === BASE STYLES === */
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Custom animations */
+  /* Typography scale for premium feel */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* === LUXURY ANIMATIONS === */
   @keyframes bounce {
     0%, 20%, 53%, 80%, 100% {
       transform: translate3d(0,0,0);
@@ -164,11 +192,121 @@ All colors MUST be HSL.
     }
   }
 
+  @keyframes luxuryFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes luxurySlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes goldShimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Animation utilities */
   .animate-bounce {
     animation: bounce 2s infinite;
   }
 
-  /* Hide scrollbar for vehicle selector */
+  .animate-luxury-fade {
+    animation: luxuryFadeIn 0.6s ease-out;
+  }
+
+  .animate-luxury-slide {
+    animation: luxurySlideIn 0.5s ease-out;
+  }
+
+  .animate-shimmer {
+    animation: goldShimmer 2s ease-in-out infinite;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   COMPONENT LAYER - Reusable component styles
+   HUMAN TWEAKABLE: Modify these classes to change component appearance
+   PERFORMANCE OPTIMIZED: Removed transform animations on hover
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Premium button styles - OPTIMIZED: no transform on hover */
+  .btn-luxury {
+    background: var(--gradient-luxury);
+    color: hsl(var(--gray-900));
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: var(--transition-luxury);
+    box-shadow: var(--shadow-luxury);
+  }
+
+  .btn-luxury:hover {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Premium card styles - OPTIMIZED: no transform on hover */
+  .card-luxury {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--card-border));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-smooth);
+  }
+
+  .card-luxury:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Luxury text styles */
+  .text-luxury {
+    background: var(--gradient-luxury);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  /* Premium form inputs */
+  .input-luxury {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    transition: var(--transition-smooth);
+  }
+
+  .input-luxury:focus {
+    outline: none;
+    border-color: hsl(var(--luxury-gold));
+    box-shadow: 0 0 0 3px hsla(var(--luxury-gold) / 0.1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UTILITY LAYER - Helper classes and utilities
+   HUMAN TWEAKABLE: Add custom utility classes here for specific design needs
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* Scrollbar utilities - Hide scrollbars while maintaining functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -177,4 +315,165 @@ All colors MUST be HSL.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .scrollbar-luxury::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-luxury::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  .scrollbar-luxury::-webkit-scrollbar-thumb {
+    background: var(--gradient-luxury);
+    border-radius: 4px;
+  }
+
+  .scrollbar-luxury::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--luxury-gold));
+  }
+
+  /* Glass effect utilities */
+  .glass-luxury {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Gradient text utilities - FIXED: No more transparent text issues */
+  .gradient-text-luxury {
+    background: var(--gradient-luxury);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: hsl(var(--luxury-gold)); /* Fallback color */
+  }
+
+  .gradient-text-primary {
+    background: var(--gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: hsl(var(--primary)); /* Fallback color - BLACK ELEMENT - TWEAK HERE */
+  }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   QUICK TWEAKABLE BLACK/DARK ELEMENTS
+   Use this section to quickly modify colors without hunting through the CSS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.frades-luxury-root {
+  /* HERO TEXT TWEAKS - Make hero text more readable */
+  --scoped: 1;
+
+  /* Scoped hero text */
+  --hero-text-primary-color: white;
+}
+
+.frades-luxury-root .hero-text-primary {
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  font-weight: 700;
+}
+
+.frades-luxury-root .hero-text-secondary {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* Button and card text overrides (scoped) */
+.frades-luxury-root .btn-primary-text-override {
+  color: white;
+}
+
+.frades-luxury-root .btn-secondary-text-override {
+  color: hsl(210 8% 25%); /* Adjust this percentage to lighten/darken */
+}
+
+.frades-luxury-root .card-title-override {
+  color: hsl(210 10% 15%); /* Adjust this percentage to lighten/darken */
+}
+
+.frades-luxury-root .card-content-override {
+  color: hsl(210 7% 35%); /* Adjust this percentage to lighten/darken */
+}
+
+.frades-luxury-root .nav-text-override {
+  color: hsl(210 8% 25%); /* Adjust this percentage to lighten/darken */
+}
+
+.frades-luxury-root .text-readable-dark {
+  color: hsl(210 8% 30%); /* Lighter than pure black but still dark */
+}
+
+.frades-luxury-root .text-readable-medium {
+  color: hsl(210 7% 45%); /* Medium gray - good for secondary text */
+}
+
+.frades-luxury-root .text-readable-light {
+  color: hsl(210 6% 60%); /* Light gray - good for captions */
+}
+
+/* Restore transparent text fix (scoped) - target only known helper classes to avoid global leakage */
+.frades-luxury-root .hero-text-primary,
+.frades-luxury-root .hero-text-secondary,
+.frades-luxury-root .btn-primary-text-override,
+.frades-luxury-root .btn-secondary-text-override,
+.frades-luxury-root .card-title-override,
+.frades-luxury-root .card-content-override,
+.frades-luxury-root .nav-text-override,
+.frades-luxury-root .text-readable-dark,
+.frades-luxury-root .text-readable-medium,
+.frades-luxury-root .text-readable-light {
+  -webkit-text-fill-color: initial;
+}
+
+/* Scoped card and form fixes */
+.frades-luxury-root .card,
+.frades-luxury-root [data-radix-collection-item],
+.frades-luxury-root .bg-card,
+.frades-luxury-root .backdrop-blur-sm {
+  /* Keep these rules but allow component-level overrides; prefer using the helper class .luxury-solid-bg for enforced behavior */
+  background-color: hsl(var(--card)); /* Force solid white background */
+  opacity: 1; /* Remove any transparency */
+  backdrop-filter: none; /* Remove blur effect that causes transparency */
+}
+
+/* Helper utilities - opt-in classes that enforce the luxury visual fixes when needed */
+.frades-luxury-root .luxury-solid-bg {
+  background-color: hsl(var(--card)) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
+.frades-luxury-root .luxury-no-backdrop {
+  backdrop-filter: none !important;
+}
+
+.frades-luxury-root .luxury-rounded {
+  border-radius: var(--radius) !important;
+}
+
+/* Scoped button and luxury component resets */
+.frades-luxury-root .btn,
+.frades-luxury-root .btn-luxury,
+.frades-luxury-root .card-luxury,
+.frades-luxury-root .popover-luxury {
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--background));
+  color: hsl(var(--card-foreground));
+  opacity: 1;
+}
+
+/* Scoped border radius fixes */
+.frades-luxury-root .card, .frades-luxury-root .btn, .frades-luxury-root .input, .frades-luxury-root .select, .frades-luxury-root .popover, .frades-luxury-root .dropdown, .frades-luxury-root .modal {
+  border-radius: var(--radius);
+}
+
+/* ...keep other scoped overrides (calendar, tabs, popovers, etc.) under .frades-luxury-root ... */

@@ -1,0 +1,105 @@
+name: Migrate Staging then Production (with approval)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pgconn_staging:
+        description: 'Optional Postgres connection string for staging (overrides secret)'
+        required: false
+      pgconn_production:
+        description: 'Optional Postgres connection string for production (overrides secret)'
+        required: false
+
+jobs:
+  migrate-staging:
+    name: Apply migrations to Staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install psql
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run migrations on Staging
+        env:
+          PGCONN: ${{ github.event.inputs.pgconn_staging || secrets.PG_CONNECTION_STRING_STAGING }}
+        run: |
+          if [ -z "$PGCONN" ]; then
+            echo "PG_CONNECTION_STRING_STAGING secret is not set and no input provided. Set the repository secret 'PG_CONNECTION_STRING_STAGING' or provide pgconn_staging input." >&2
+            exit 1
+          fi
+          echo "Applying migrations to STAGING..."
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Running: $f"
+            psql "$PGCONN" -f "$f"
+            if [ $? -ne 0 ]; then
+              echo "Migration failed: $f" >&2
+              exit 1
+            fi
+          done
+          echo "Staging migrations applied."
+
+  require-production-approval:
+    name: Await production approval
+    needs: migrate-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Pause for approval
+        run: |
+          echo "This job uses the 'production' environment which should be protected by required reviewers. Approve in the GitHub UI to continue."
+
+  migrate-production:
+    name: Backup and Apply migrations to Production
+    needs: require-production-approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install psql
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Backup production DB (pg_dump)
+        env:
+          PGCONN: ${{ github.event.inputs.pgconn_production || secrets.PG_CONNECTION_STRING }}
+        run: |
+          if [ -z "$PGCONN" ]; then
+            echo "PG_CONNECTION_STRING secret is not set and no input provided. Set the repository secret 'PG_CONNECTION_STRING' or provide pgconn_production input." >&2
+            exit 1
+          fi
+          BACKUP_FILE="prod_backup_${{ github.run_id }}_$(date +%F_%H%M%S).dump"
+          echo "Creating DB backup to $BACKUP_FILE"
+          pg_dump --format=custom --file="$BACKUP_FILE" "$PGCONN"
+          if [ $? -ne 0 ]; then
+            echo "pg_dump failed" >&2
+            exit 1
+          fi
+          mkdir -p backups
+          mv "$BACKUP_FILE" backups/
+
+      - name: Upload DB backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-db-backup-${{ github.run_id }}
+          path: backups/
+
+      - name: Run migrations on Production
+        env:
+          PGCONN: ${{ github.event.inputs.pgconn_production || secrets.PG_CONNECTION_STRING }}
+        run: |
+          echo "Applying migrations to PRODUCTION..."
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Running: $f"
+            psql "$PGCONN" -f "$f"
+            if [ $? -ne 0 ]; then
+              echo "Migration failed: $f" >&2
+              exit 1
+            fi
+          done
+          echo "Production migrations applied."

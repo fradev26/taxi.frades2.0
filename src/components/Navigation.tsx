@@ -1,112 +1,329 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { AccountDropdown } from "@/components/AccountDropdown";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Car, Wallet, Clock, User, Settings } from "lucide-react";
+import { Car, Wallet, Clock, Settings, Menu, X, UserCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { signOut } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 import { ROUTES, APP_CONFIG } from "@/constants";
 
-export function Navigation() {
+export const Navigation = memo(function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Header navigation items - only show Boeken and Login/Account
-  const headerNavigationItems = user
-    ? [{ label: "Boeken", path: ROUTES.HOME, icon: Car }]
-    : [
-        { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
-      ];
+  // Close mobile menu when clicking outside or on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
-  // Mobile bottom navigation items - show all navigation
-  const mobileNavigationItems = user
-    ? [
-        { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Wallet", path: ROUTES.WALLET, icon: Wallet },
-        { label: "Activiteit", path: ROUTES.TRIPS, icon: Clock },
-        { label: "Account", path: ROUTES.ACCOUNT, icon: User },
-        ...(isAdmin ? [{ label: "Admin", path: ROUTES.ADMIN, icon: Settings }] : [])
-      ]
-    : [
-        { label: "Boeken", path: ROUTES.HOME, icon: Car },
-        { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
-      ];
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
-  const isActive = (path: string) => {
-    if (path === ROUTES.HOME && location.pathname === ROUTES.HOME) return true;
-    if (path !== ROUTES.HOME && location.pathname.startsWith(path)) return true;
-    return false;
+  // Handle header visibility on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < lastScrollY) {
+        // Scrolling up
+        setIsHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down and past threshold
+        setIsHeaderVisible(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await signOut();
+      if (error) {
+        toast({
+          title: "Fout bij uitloggen",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Uitgelogd",
+          description: "Je bent succesvol uitgelogd.",
+        });
+        navigate("/");
+      }
+    } catch (error) {
+      toast({
+        title: "Fout bij uitloggen",
+        description: "Er is een onverwachte fout opgetreden.",
+        variant: "destructive",
+      });
+    }
   };
+
+  // Memoize navigation items to prevent recreation on every render
+  const headerNavigationItems = useMemo(() => 
+    user
+      ? [{ label: "Boeken", path: ROUTES.HOME, icon: Car }]
+      : [
+          { label: "Boeken", path: ROUTES.HOME, icon: Car },
+          { label: "Inloggen", path: ROUTES.LOGIN, icon: UserCircle },
+        ],
+    [user]
+  );
+
+  // Mobile navigation items for hamburger menu - consistent with AccountDropdown
+  const mobileMenuItems = useMemo(() =>
+    user
+      ? [
+          { label: "Wallet", path: ROUTES.WALLET, icon: Wallet },
+          { label: "Profiel", path: ROUTES.PROFILE, icon: UserCircle },
+          { label: "Activiteit", path: ROUTES.TRIPS, icon: Clock }
+        ]
+      : [
+          { label: "Inloggen", path: ROUTES.LOGIN, icon: UserCircle },
+        ],
+    [user]
+  );
+
+  // Mobile bottom navigation items - consistent with hamburger menu
+  const mobileNavigationItems = useMemo(() =>
+    user
+      ? [
+          { label: "Boeken", path: ROUTES.HOME, icon: Car },
+          { label: "Wallet", path: ROUTES.WALLET, icon: Wallet },
+          { label: "Profiel", path: ROUTES.PROFILE, icon: UserCircle },
+          { label: "Activiteit", path: ROUTES.TRIPS, icon: Clock }
+        ]
+      : [
+          { label: "Boeken", path: ROUTES.HOME, icon: Car },
+          { label: "Inloggen", path: ROUTES.LOGIN, icon: UserCircle },
+        ],
+    [user]
+  );
+
+  const isActive = useCallback((path: string) => {
+    // Handle tab-based navigation
+    if (path.includes('?tab=')) {
+      const [basePath, tabQuery] = path.split('?');
+      const currentTab = new URLSearchParams(location.search).get('tab');
+      const expectedTab = new URLSearchParams(tabQuery).get('tab');
+      return location.pathname === basePath && currentTab === expectedTab;
+    }
+    
+    // For the "Boeken" button (ROUTES.HOME), show as active when on home page (with or without tabs)
+    if (path === ROUTES.HOME && location.pathname === ROUTES.HOME) return true;
+    
+    // For other paths, check if current path starts with the item path
+    if (path !== ROUTES.HOME && location.pathname.startsWith(path)) return true;
+    
+    return false;
+  }, [location.pathname, location.search]);
 
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center justify-between w-full px-6 py-4 bg-card border-b border-border">
-        {/* Left spacer for centering */}
-        <div className="flex-1"></div>
-        
-        {/* Centered Logo */}
-        <button
-          onClick={() => navigate(ROUTES.HOME)}
-          className="hover:opacity-80 transition-opacity"
-        >
-          <span className="text-xl font-bold text-primary">
-            {APP_CONFIG.name}
-          </span>
-        </button>
+      <nav className={`hidden md:flex w-full bg-card border-b border-gray-100 transition-transform duration-300 sticky top-0 z-50 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="w-full relative h-12">
+          {/* Logo: pinned to the absolute left of the viewport */}
+          <div className="absolute left-4 top-0 flex items-center h-12">
+            <button onClick={() => navigate(ROUTES.HOME)} className="hover:opacity-80 transition-opacity">
+              <span className="text-sm font-bold text-primary">
+                {APP_CONFIG.name}
+              </span>
+            </button>
+          </div>
 
-        {/* Right side navigation */}
-        <div className="flex items-center space-x-1 flex-1 justify-end">
-          {headerNavigationItems.map((item) => (
-            <Button
-              key={item.path}
-              variant={isActive(item.path) ? "taxi-primary" : "taxi-ghost"}
-              size="sm"
-              onClick={() => navigate(item.path)}
-              className="gap-2"
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Button>
-          ))}
-          <ThemeToggle />
-          {user && <AccountDropdown />}
+          {/* Right side navigation: pinned to the absolute right */}
+          <div className="absolute right-4 top-0 flex items-center h-12 space-x-1">
+            {headerNavigationItems.map((item) => (
+              <Button
+                key={item.path}
+                variant={isActive(item.path) ? "default" : "ghost"}
+                size="sm"
+                onClick={() => navigate(item.path)}
+                className={`gap-2 rounded-xl border-2 transition-colors ${
+                  isActive(item.path)
+                    ? "bg-black text-white border-black hover:bg-gray-800"
+                    : "bg-transparent text-black border-transparent hover:bg-gray-100 hover:border-gray-200"
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </Button>
+            ))}
+            {user && <AccountDropdown />}
+          </div>
         </div>
       </nav>
 
       {/* Mobile Navigation */}
       <nav className="md:hidden">
         {/* Mobile Header */}
-        <div className="flex items-center justify-between w-full px-4 py-3 bg-card border-b border-border">
-          <button
-            onClick={() => navigate(ROUTES.HOME)}
-            className="hover:opacity-80 transition-opacity"
-          >
+        <div className={`flex items-center justify-center w-full bg-card border-b border-gray-100 transition-transform duration-300 sticky top-0 z-50 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+          <div className="w-full max-w-7xl mx-auto flex items-center justify-between px-4 h-12">
+            {/* Hamburger Menu Button */}
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 h-10 flex items-center justify-center"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </Button>
+            )}
+            
+            <button onClick={() => navigate(ROUTES.HOME)} className="hover:opacity-80 transition-opacity flex items-center h-full">
+              <span className="text-sm font-bold text-primary flex items-center h-full">
+                {APP_CONFIG.name}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Side Menu Backdrop */}
+        {isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
+        {/* Mobile Side Menu */}
+        <div className={`
+          fixed top-0 left-0 h-full w-80 max-w-[80vw] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          {/* Menu Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <span className="text-lg font-bold text-primary">
               {APP_CONFIG.name}
             </span>
-          </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
 
-          <ThemeToggle />
+          {/* User Info Section */}
+          {user && (
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center">
+                  <span className="text-lg font-medium">
+                    {user.email?.charAt(0).toUpperCase() || "U"}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 truncate">
+                    {user.email || "Gebruiker"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    5 ⭐ • Premium lid
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Menu Items */}
+          {user && (
+            <div className="py-4">
+              {mobileMenuItems.map((item) => (
+                <Button
+                  key={item.path}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    navigate(item.path);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`
+                    w-full justify-start gap-4 px-6 py-4 h-auto rounded-xl text-left border-2 transition-colors
+                    ${isActive(item.path) 
+                      ? 'bg-black text-white border-black' 
+                      : 'text-black border-transparent hover:bg-gray-100 hover:border-gray-200'
+                    }
+                  `}
+                >
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center
+                    ${isActive(item.path) ? 'bg-white text-black' : 'bg-gray-100 text-black'}
+                  `}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-base font-medium">{item.label}</span>
+                </Button>
+              ))}
+              
+              {/* Logout option */}
+              <div className="border-t border-gray-100 mt-4 pt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full justify-start gap-4 px-6 py-4 h-auto rounded-xl border-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                      <UserCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                  <span className="text-base font-medium">Uitloggen</span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100">
+            <p className="text-xs text-gray-500 text-center">
+              © 2024 {APP_CONFIG.name} • Versie 2.0
+            </p>
+          </div>
         </div>
       </nav>
 
       {/* Bottom Navigation (Mobile) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-1">
           {mobileNavigationItems.map((item) => (
             <Button
               key={item.path}
-              variant="ghost"
+              variant={isActive(item.path) ? "taxi-primary" : "taxi-ghost"}
               size="sm"
               onClick={() => navigate(item.path)}
-              className={`flex-col gap-1 h-16 ${
-                isActive(item.path)
-                  ? "text-primary bg-accent-green/10"
-                  : "text-muted-foreground"
-              }`}
+              className="flex-col gap-1 h-12"
             >
               <item.icon className="w-5 h-5" />
               <span className="text-xs">{item.label}</span>
@@ -116,4 +333,4 @@ export function Navigation() {
       </div>
     </>
   );
-}
+});

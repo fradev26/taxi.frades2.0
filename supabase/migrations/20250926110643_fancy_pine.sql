@@ -17,14 +17,17 @@
 -- Add foreign key constraint between bookings and users if it doesn't exist
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints 
-    WHERE constraint_name = 'bookings_user_id_fkey' 
-    AND table_name = 'bookings'
-  ) THEN
-    ALTER TABLE bookings 
-    ADD CONSTRAINT bookings_user_id_fkey 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+  IF EXISTS (SELECT 1 FROM information_schema.tables 
+             WHERE table_schema = 'public' AND table_name = 'bookings') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints 
+      WHERE constraint_name = 'bookings_user_id_fkey' 
+      AND table_name = 'bookings'
+    ) THEN
+      ALTER TABLE bookings 
+      ADD CONSTRAINT bookings_user_id_fkey 
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+    END IF;
   END IF;
 END $$;
 
@@ -46,5 +49,11 @@ CREATE POLICY "Admins can read all users"
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- Add index on user_id in bookings table for better performance
-CREATE INDEX IF NOT EXISTS idx_bookings_user_id_performance 
-ON bookings(user_id) WHERE user_id IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables 
+             WHERE table_schema = 'public' AND table_name = 'bookings') THEN
+    CREATE INDEX IF NOT EXISTS idx_bookings_user_id_performance 
+    ON bookings(user_id) WHERE user_id IS NOT NULL;
+  END IF;
+END $$;
