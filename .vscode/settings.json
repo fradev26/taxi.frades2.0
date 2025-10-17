@@ -1,0 +1,30 @@
+{
+  // Use GitHub Actions schema for workflow YAML to reduce false-positive
+  // "Context access might be invalid" warnings from the editor.
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*"
+  },
+
+  // Keep YAML validation enabled so the editor still provides helpful errors
+  // but uses the proper GitHub Actions schema above.
+  "yaml.validate": true,
+
+  // Minimal workspace preferences used by this repo
+  "typescript.preferences.exclude": ["**/supabase/functions/**/*"],
+  "typescript.validate.enable": false,
+  "typescript.suggest.enabled": false,
+
+  "files.associations": {
+    "supabase/functions/**/*.ts": "typescript",
+    "*.css": "tailwindcss"
+  },
+
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\\\"|`)([^']*)(?:'|\\\"|`)"]
+  ]
+}
