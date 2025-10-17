@@ -1,0 +1,36 @@
+{
+  "Stripe": {
+    "type": "payment",
+    "keys": ["VITE_STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
+    "webhooks": ["https://your-project-ref.supabase.co/functions/v1/stripe-webhook"],
+    "locations": [
+      "STRIPE_INTEGRATION_GUIDE.md",
+      "supabase/functions/stripe-webhook/index.ts",
+      "src/services/stripeService.ts",
+      "supabase/migrations/20251002104500_add_stripe_payment_integration.sql"
+    ]
+  },
+  "Supabase": {
+    "type": "backend",
+    "notes": "Used as primary backend for DB, auth and edge functions",
+    "locations": [
+      "src/integrations/supabase/client.ts",
+      "src/lib/adminSettingsApi.ts",
+      "supabase/functions/stripe-webhook",
+      "scripts/cleanup-auth-users.ts"
+    ]
+  },
+  "Google Maps": {
+    "type": "maps",
+    "notes": "Google Maps API referenced in docs; used for geolocation and reverse geocoding",
+    "locations": [
+      "ADMIN_PANEL_IMPLEMENTATION.md",
+      "IMPLEMENTATION_SUMMARY.md"
+    ]
+  },
+  "Other": {
+    "type": "other",
+    "notes": "References to other integrations (Slack, webhooks, etc.) may exist in docs and scripts",
+    "locations": ["(search repository for keywords: webhook, webhooks, API keys)"]
+  }
+}

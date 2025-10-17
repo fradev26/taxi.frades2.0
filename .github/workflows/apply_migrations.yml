@@ -1,0 +1,65 @@
+name: Apply DB migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      pgconn:
+        description: 'Optional Postgres connection string to use instead of repository secret'
+        required: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Backup DB (pg_dump)
+        env:
+          PGCONN: ${{ github.event.inputs.pgconn || secrets.PG_CONNECTION_STRING }}
+        run: |
+          if [ -z "$PGCONN" ]; then
+            echo "PG_CONNECTION_STRING secret is not set and no input provided. Set the repository secret 'PG_CONNECTION_STRING' to your production Postgres connection string or provide 'pgconn' input when dispatching the workflow." >&2
+            exit 1
+          fi
+          BACKUP_FILE="db_backup_${{ github.run_id }}_$(date +%F_%H%M%S).dump"
+          echo "Creating DB backup to $BACKUP_FILE"
+          pg_dump --format=custom --file="$BACKUP_FILE" "$PGCONN"
+          if [ $? -ne 0 ]; then
+            echo "pg_dump failed" >&2
+            exit 1
+          fi
+          echo "Uploading backup artifact"
+          mkdir -p backups
+          mv "$BACKUP_FILE" backups/
+        
+      - name: Upload DB backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backups/
+
+      - name: Run migrations
+        env:
+          PGCONN: ${{ github.event.inputs.pgconn || secrets.PG_CONNECTION_STRING }}
+        run: |
+          if [ -z "$PGCONN" ]; then
+            echo "PG_CONNECTION_STRING secret is not set and no input provided. Set the repository secret 'PG_CONNECTION_STRING' to your production Postgres connection string or provide 'pgconn' input when dispatching the workflow." >&2
+            exit 1
+          fi
+
+          echo "Applying SQL migrations from supabase/migrations..."
+          # Ensure files are processed in lexicographic (timestamp) order
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Running migration: $f"
+            psql "$PGCONN" -f "$f"
+            if [ $? -ne 0 ]; then
+              echo "Migration failed: $f" >&2
+              exit 1
+            fi
+          done
+          echo "Migrations applied successfully."

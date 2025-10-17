@@ -59,9 +59,10 @@ serve(async (req) => {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         console.log('PaymentIntent succeeded:', paymentIntent.id)
 
-        if (paymentIntent.metadata.type === 'credit_topup') {
-          // Handle credit top-up
-          const userId = paymentIntent.metadata.user_id
+        const meta = paymentIntent.metadata || {} as Record<string, string>
+        // If it's a credit top-up
+        if (meta.type === 'credit_topup') {
+          const userId = meta.user_id
           const amount = paymentIntent.amount / 100 // Convert from cents
 
           // Update user's wallet balance
@@ -92,6 +93,52 @@ serve(async (req) => {
 
           console.log(`Updated wallet balance for user ${userId}: +€${amount}`)
         }
+
+        // Additionally, if booking metadata is present, update booking
+        const bookingId = meta.booking_id || null
+        const guestToken = meta.guest_token || null
+        const amount = paymentIntent.amount || null
+
+        if (bookingId || guestToken) {
+          // Find booking
+          let bookingRecord: any = null
+          if (bookingId) {
+            const { data: booking } = await supabaseServiceClient.from('bookings').select('*').eq('id', bookingId).single()
+            bookingRecord = booking
+          } else if (guestToken) {
+            const { data: booking } = await supabaseServiceClient.from('bookings').select('*').eq('guest_token', guestToken).single()
+            bookingRecord = booking
+          }
+
+          if (bookingRecord) {
+            await supabaseServiceClient
+              .from('bookings')
+              .update({
+                status: 'confirmed',
+                payment_status: 'paid',
+                payment_method: 'stripe',
+                stripe_payment_intent_id: paymentIntent.id,
+                amount_paid: (amount ? amount / 100 : null),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', bookingRecord.id)
+
+            await supabaseServiceClient.from('transactions').insert({
+              user_id: bookingRecord.user_id || null,
+              booking_id: bookingRecord.id,
+              type: 'payment',
+              amount: -(amount ? amount / 100 : 0),
+              description: 'Booking payment (webhook)',
+              payment_method: 'stripe',
+              stripe_payment_intent_id: paymentIntent.id,
+            })
+
+            console.log(`Booking ${bookingRecord.id} marked as paid via webhook`) 
+          } else {
+            console.warn('No booking found for PaymentIntent metadata', { bookingId, guestToken })
+          }
+        }
+
         break
       }
 

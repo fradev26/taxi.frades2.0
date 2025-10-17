@@ -4,9 +4,10 @@ import { BookingInterface } from "@/components/BookingInterface";
 import { ServicesSection } from "@/components/ServicesSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Car, MapPin, Clock, Shield, Star, Users } from "lucide-react";
+import { Car, MapPin, Clock, Shield, Star, Users, UserPlus, User, Building } from "lucide-react";
 import { Link } from "react-router-dom";
 import { APP_CONFIG, ROUTES } from "@/constants";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const features = [
@@ -39,6 +40,8 @@ const Index = () => {
     { label: "Chauffeurs", value: "500+" },
   ];
 
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -70,20 +73,23 @@ const Index = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl hover:bg-gray-800 transition-colors">
-                  <Link to={ROUTES.OVER_ONS}>
-                    <Car className="w-5 h-5 mr-2" />
-                    Meer informatie
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-white rounded-xl hover:bg-gray-100 transition-colors">
-                  <Link to={ROUTES.VOOR_BEDRIJVEN}>
-                    <Users className="w-5 h-5 mr-2" />
-                    Voor bedrijven
-                  </Link>
-                </Button>
-              </div>
+              {/* Hero action buttons (only show when not logged in) */}
+              {!user && (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl opacity-80 hover:opacity-100 transition-opacity" aria-label="Aanmelden particulier">
+                    <Link to="/account/register">
+                      <User className="w-5 h-5 mr-2" />
+                      Aanmelden
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-white rounded-xl opacity-80 hover:opacity-100 transition-opacity" aria-label="Aanmelden bedrijf">
+                    <Link to="/account/register?type=business">
+                      <Building className="w-5 h-5 mr-2" />
+                      Aanmelden
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Right Side - Booking Interface */}
@@ -95,30 +101,32 @@ const Index = () => {
       </section>
 
       <div className="container mx-auto px-4 pb-24 md:pb-6">
-        {/* CTA Section */}
-        <section className="py-16 text-center">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Klaar om te vertrekken?
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Download de app en boek direct je eerste rit. 
-              Nieuwe gebruikers krijgen €10 korting!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl hover:bg-gray-800 transition-colors">
-                <Link to={ROUTES.LOGIN}>
-                  Account aanmaken
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-colors">
-                <Link to={ROUTES.OVER_ONS}>
-                  Meer informatie
-                </Link>
-              </Button>
+        {/* CTA Section (only show for unauthenticated users) */}
+        {!user && (
+          <section className="py-16 text-center">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Klaar om te vertrekken?
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Download de app en boek direct je eerste rit. 
+                Nieuwe gebruikers krijgen €10 korting!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg" className="text-lg px-8 bg-black text-white border-2 border-black rounded-xl hover:bg-gray-800 transition-colors">
+                  <Link to={ROUTES.LOGIN}>
+                    Account aanmaken
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="text-lg px-8 bg-white text-black border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-colors">
+                  <Link to={ROUTES.OVER_ONS}>
+                    Meer informatie
+                  </Link>
+                </Button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
       
       {/** BEGIN: UI uit image.png **/}

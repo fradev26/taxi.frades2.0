@@ -9,8 +9,10 @@ import { ROUTES } from "@/constants";
 import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Wallet from "./pages/Wallet";
 import Trips from "./pages/Trips";
+import TripDetails from "./pages/TripDetails";
 import Account from "./pages/Account";
 import AccountDebug from "./pages/AccountDebug";
 import AccountSimple from "./pages/AccountSimple";
@@ -56,8 +58,10 @@ const App = () => (
                 <Routes>
                   <Route path={ROUTES.HOME} element={<Index />} />
                   <Route path={ROUTES.LOGIN} element={<Login />} />
+                  <Route path={ROUTES.REGISTER} element={<Register />} />
                   <Route path={ROUTES.WALLET} element={<Wallet />} />
                   <Route path={ROUTES.TRIPS} element={<Trips />} />
+                  <Route path={`${ROUTES.TRIPS}/:id`} element={<TripDetails />} />
                   <Route path={ROUTES.ACCOUNT} element={<Account />} />
                   <Route path={ROUTES.PROFILE} element={<Profile />} />
                   <Route path={ROUTES.TAX_PROFILE} element={<TaxProfile />} />

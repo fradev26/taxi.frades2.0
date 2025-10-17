@@ -18,9 +18,9 @@ export default function DatabaseTestSimple() {
       console.log('User found:', user.id);
       
       // Test SELECT
-      console.log('Testing SELECT from users...');
+  console.log('Testing SELECT from profiles...');
       const { data: selectData, error: selectError } = await supabase
-        .from('users')
+  .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
@@ -37,7 +37,7 @@ export default function DatabaseTestSimple() {
         
         // Test UPDATE
         const { data: updateData, error: updateError } = await supabase
-          .from('users')
+          .from('profiles')
           .update({ 
             first_name: 'Test ' + Date.now(),
             updated_at: new Date().toISOString()
@@ -59,7 +59,7 @@ export default function DatabaseTestSimple() {
         
         // Test INSERT into users table (not profiles!)
         const { data: insertData, error: insertError } = await supabase
-          .from('users')
+          .from('profiles')
           .insert({
             id: user.id,
             email: user.email,

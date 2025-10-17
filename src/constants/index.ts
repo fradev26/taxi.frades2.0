@@ -24,6 +24,7 @@ export const ROUTES = {
   SALES_TERMS: '/sales-terms',
   LEGAL_INFO: '/legal-info',
   SITE_MAP: '/site-map',
+  REGISTER: '/account/register',
 } as const;
 
 export const TRIP_STATUS = {

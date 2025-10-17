@@ -2,35 +2,40 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Types for booking data
+// Types for booking data matching database schema
 interface BookingWithDetails {
   id: string;
   user_id: string;
-  company_id?: string;
   vehicle_id?: string;
-  pickup_address: string;
-  pickup_lat?: number;
-  pickup_lng?: number;
-  destination_address: string;
-  destination_lat?: number;
-  destination_lng?: number;
-  waypoints?: any;
-  scheduled_time: string;
-  estimated_duration?: number;
+  driver_id?: string;
+  pickup_location: {
+    address: string;
+    lat?: number;
+    lng?: number;
+  };
+  dropoff_location?: {
+    address: string;
+    lat?: number;
+    lng?: number;
+  };
+  booking_type: string;
+  pickup_time: string;
+  dropoff_time?: string;
+  duration_hours?: number;
   estimated_distance?: number;
-  estimated_cost?: number;
-  final_cost?: number;
+  estimated_duration?: number;
+  estimated_price?: number;
+  final_price?: number;
   status: string;
   payment_status: string;
   payment_method?: string;
-  payment_id?: string;
-  confirmation_sent: boolean;
+  special_requests?: string;
+  passenger_count: number;
   created_at: string;
   updated_at: string;
-  // Joined data
   vehicle_name?: string;
   user_email?: string;
-  company_name?: string;
+  driver_name?: string;
 }
 
 interface BookingFilters {
@@ -40,88 +45,64 @@ interface BookingFilters {
   dateTo?: string;
 }
 
-// Optimized bookings fetcher
+// Fetch bookings directly from bookings table
 const fetchBookingsWithDetails = async (filters: BookingFilters = {}): Promise<BookingWithDetails[]> => {
   try {
-    // Use the optimized RPC function
-    const { data, error } = await supabase.rpc('get_bookings_with_details');
-    
+    let query = supabase
+      .from('bookings')
+      .select(`
+        *,
+        profiles:user_id (
+          email,
+          first_name,
+          last_name
+        ),
+        vehicles:vehicle_id (
+          make,
+          model,
+          license_plate
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters.paymentStatus) {
+      query = query.eq('payment_status', filters.paymentStatus);
+    }
+    if (filters.dateFrom) {
+      query = query.gte('pickup_time', filters.dateFrom);
+    }
+    if (filters.dateTo) {
+      query = query.lte('pickup_time', filters.dateTo);
+    }
+
+    const { data, error } = await query;
+
     if (error) {
-      console.error('Database error:', error);
       throw new Error(`Database error: ${error.message}`);
     }
 
-    let bookings = data || [];
+    const transformedData = (data || []).map(booking => ({
+      ...booking,
+      user_email: booking.profiles?.email || '',
+      vehicle_name: booking.vehicles ? `${booking.vehicles.make} ${booking.vehicles.model}` : undefined,
+      driver_name: booking.driver_id ? 'Assigned Driver' : undefined
+    }));
 
-    // Apply client-side filters if needed
-    if (filters.status && filters.status !== 'all') {
-      bookings = bookings.filter((booking: BookingWithDetails) => booking.status === filters.status);
-    }
-
-    if (filters.paymentStatus && filters.paymentStatus !== 'all') {
-      bookings = bookings.filter((booking: BookingWithDetails) => booking.payment_status === filters.paymentStatus);
-    }
-
-    if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom);
-      bookings = bookings.filter((booking: BookingWithDetails) => 
-        new Date(booking.created_at) >= fromDate
-      );
-    }
-
-    if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo);
-      toDate.setHours(23, 59, 59, 999); // End of day
-      bookings = bookings.filter((booking: BookingWithDetails) => 
-        new Date(booking.created_at) <= toDate
-      );
-    }
-
-    return bookings;
+    return transformedData;
   } catch (error) {
     console.error('Error fetching bookings:', error);
     throw error;
   }
 };
 
-// Single booking fetcher
-const fetchBookingById = async (id: string): Promise<BookingWithDetails> => {
+// Create booking
+const createBooking = async (bookingData: any): Promise<BookingWithDetails> => {
   const { data, error } = await supabase
     .from('bookings')
-    .select(`
-      *,
-      vehicles(name),
-      profiles(email),
-      companies(name)
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
-// Update booking status
-const updateBookingStatus = async ({ 
-  bookingId, 
-  status, 
-  paymentStatus 
-}: { 
-  bookingId: string; 
-  status?: string; 
-  paymentStatus?: string; 
-}): Promise<BookingWithDetails> => {
-  const updates: any = {
-    updated_at: new Date().toISOString()
-  };
-
-  if (status) updates.status = status;
-  if (paymentStatus) updates.payment_status = paymentStatus;
-
-  const { data, error } = await supabase
-    .from('bookings')
-    .update(updates)
-    .eq('id', bookingId)
+    .insert([bookingData])
     .select()
     .single();
 
@@ -129,85 +110,104 @@ const updateBookingStatus = async ({
   return data;
 };
 
+// Update booking
+const updateBooking = async (id: string, updates: Partial<BookingWithDetails>): Promise<BookingWithDetails> => {
+  const { data, error } = await supabase
+    .from('bookings')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Delete booking
+const deleteBooking = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
 // Custom hooks
 export function useBookings(filters: BookingFilters = {}) {
   return useQuery({
     queryKey: ['bookings', filters],
     queryFn: () => fetchBookingsWithDetails(filters),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    cacheTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: 'always',
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useBooking(id: string) {
-  return useQuery({
-    queryKey: ['booking', id],
-    queryFn: () => fetchBookingById(id),
-    staleTime: 1 * 60 * 1000, // 1 minute
-    enabled: !!id,
-  });
-}
-
-export function useUpdateBookingStatus() {
+export function useCreateBooking() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: updateBookingStatus,
-    onSuccess: (updatedBooking) => {
-      // Update the bookings list cache
-      queryClient.setQueryData(['bookings'], (oldData: BookingWithDetails[] = []) => {
-        return oldData.map(booking => 
-          booking.id === updatedBooking.id ? updatedBooking : booking
-        );
-      });
-
-      // Update the single booking cache
-      queryClient.setQueryData(['booking', updatedBooking.id], updatedBooking);
-
-      // Invalidate and refetch
+    mutationFn: createBooking,
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-
       toast({
-        title: "Status bijgewerkt",
-        description: "De boekingstatus is succesvol bijgewerkt.",
+        title: "Boeking aangemaakt!",
+        description: "Uw boeking is succesvol aangemaakt.",
       });
     },
     onError: (error) => {
-      console.error('Error updating booking status:', error);
       toast({
-        title: "Fout bij bijwerken",
-        description: "Kon de boekingstatus niet bijwerken. Probeer het opnieuw.",
+        title: "Fout bij aanmaken boeking",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 }
 
-// Prefetch function for better UX
-export function usePrefetchBooking() {
+export function useUpdateBooking() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const prefetchBooking = (id: string) => {
-    queryClient.prefetchQuery({
-      queryKey: ['booking', id],
-      queryFn: () => fetchBookingById(id),
-      staleTime: 1 * 60 * 1000,
-    });
-  };
-
-  return prefetchBooking;
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<BookingWithDetails> }) =>
+      updateBooking(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      toast({
+        title: "Boeking bijgewerkt!",
+        description: "De boeking is succesvol bijgewerkt.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Fout bij bijwerken boeking",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 }
 
-// Background refresh
-export function useBookingsBackgroundRefresh() {
+export function useDeleteBooking() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const refreshBookings = () => {
-    queryClient.invalidateQueries({ queryKey: ['bookings'] });
-  };
-
-  return refreshBookings;
+  return useMutation({
+    mutationFn: deleteBooking,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      toast({
+        title: "Boeking verwijderd!",
+        description: "De boeking is succesvol verwijderd.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Fout bij verwijderen boeking",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 }

@@ -2,28 +2,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Types
+// Types matching database schema
 interface Vehicle {
   id: string;
-  name: string;
-  type: string;
+  make: string;
+  model: string;
+  year?: number;
+  license_plate: string;
+  color?: string;
   capacity: number;
-  hourly_rate: number;
-  per_km_rate: number;
-  available: boolean;
-  current_location?: string;
+  vehicle_type: string;
+  is_available: boolean;
+  is_active: boolean;
+  driver_id?: string;
   created_at: string;
   updated_at: string;
 }
 
 interface VehicleFormData {
-  name: string;
-  type: string;
+  make: string;
+  model: string;
+  year: string;
+  license_plate: string;
+  color: string;
   capacity: string;
-  hourly_rate: string;
-  per_km_rate: string;
-  available: boolean;
-  current_location: string;
+  vehicle_type: string;
+  is_available: boolean;
+  driver_id?: string;
 }
 
 // API functions
@@ -41,37 +46,58 @@ const fetchAvailableVehicles = async (): Promise<Vehicle[]> => {
   const { data, error } = await supabase
     .from('vehicles')
     .select('*')
-    .eq('available', true)
-    .order('name', { ascending: true });
+    .eq('is_available', true)
+    .eq('is_active', true)
+    .order('make', { ascending: true });
 
   if (error) throw error;
   return data || [];
 };
 
-const createVehicle = async (vehicleData: Omit<Vehicle, 'id' | 'created_at' | 'updated_at'>): Promise<Vehicle> => {
-  const { data, error } = await supabase
+const createVehicle = async (vehicleData: VehicleFormData): Promise<Vehicle> => {
+  const data = {
+    make: vehicleData.make,
+    model: vehicleData.model,
+    year: vehicleData.year ? parseInt(vehicleData.year) : null,
+    license_plate: vehicleData.license_plate,
+    color: vehicleData.color,
+    capacity: parseInt(vehicleData.capacity),
+    vehicle_type: vehicleData.vehicle_type,
+    is_available: vehicleData.is_available,
+    driver_id: vehicleData.driver_id || null
+  };
+
+  const { data: result, error } = await supabase
     .from('vehicles')
-    .insert(vehicleData)
+    .insert([data])
     .select()
     .single();
 
   if (error) throw error;
-  return data;
+  return result;
 };
 
-const updateVehicle = async ({ id, ...updates }: Partial<Vehicle> & { id: string }): Promise<Vehicle> => {
-  const { data, error } = await supabase
+const updateVehicle = async (id: string, vehicleData: Partial<VehicleFormData>): Promise<Vehicle> => {
+  const data: any = {};
+  if (vehicleData.make !== undefined) data.make = vehicleData.make;
+  if (vehicleData.model !== undefined) data.model = vehicleData.model;
+  if (vehicleData.year !== undefined) data.year = vehicleData.year ? parseInt(vehicleData.year) : null;
+  if (vehicleData.license_plate !== undefined) data.license_plate = vehicleData.license_plate;
+  if (vehicleData.color !== undefined) data.color = vehicleData.color;
+  if (vehicleData.capacity !== undefined) data.capacity = parseInt(vehicleData.capacity);
+  if (vehicleData.vehicle_type !== undefined) data.vehicle_type = vehicleData.vehicle_type;
+  if (vehicleData.is_available !== undefined) data.is_available = vehicleData.is_available;
+  if (vehicleData.driver_id !== undefined) data.driver_id = vehicleData.driver_id;
+
+  const { data: result, error } = await supabase
     .from('vehicles')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
+    .update(data)
     .eq('id', id)
     .select()
     .single();
 
   if (error) throw error;
-  return data;
+  return result;
 };
 
 const deleteVehicle = async (id: string): Promise<void> => {

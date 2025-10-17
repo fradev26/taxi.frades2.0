@@ -1,0 +1,817 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { supabase } from '@/integrations/supabase/client';
+
+import { useToast } from '@/hooks/use-toast';import { supabase } from '@/integrations/supabase/client';import { supabase } from '@/integrations/supabase/client';
+
+
+
+// Types for booking data matching database schemaimport { useToast } from '@/hooks/use-toast';import { useToast } from '@/hooks/use-toast';
+
+interface BookingWithDetails {
+
+  id: string;
+
+  user_id: string;
+
+  vehicle_id?: string;// Types for booking data matching database schema// Types for booking data matching database schema
+
+  driver_id?: string;
+
+  pickup_location: {interface BookingWithDetails {interface BookingWithDetails {
+
+    address: string;
+
+    lat?: number;  id: string;  id: string;
+
+    lng?: number;
+
+  };  user_id: string;  user_id: string;
+
+  dropoff_location?: {
+
+    address: string;  vehicle_id?: string;  vehicle_id?: string;
+
+    lat?: number;
+
+    lng?: number;  driver_id?: string;  driver_id?: string;
+
+  };
+
+  booking_type: string;  pickup_location: {  pickup_location: {
+
+  pickup_time: string;
+
+  dropoff_time?: string;    address: string;    address: string;
+
+  duration_hours?: number;
+
+  estimated_distance?: number;    lat?: number;    lat?: number;
+
+  estimated_duration?: number;
+
+  estimated_price?: number;    lng?: number;    lng?: number;
+
+  final_price?: number;
+
+  status: string;  };  };
+
+  payment_status: string;
+
+  payment_method?: string;  dropoff_location?: {  dropoff_location?: {
+
+  special_requests?: string;
+
+  passenger_count: number;    address: string;    address: string;
+
+  created_at: string;
+
+  updated_at: string;    lat?: number;    lat?: number;
+
+  // Joined data
+
+  vehicle_name?: string;    lng?: number;    lng?: number;
+
+  user_email?: string;
+
+  driver_name?: string;  };  };
+
+}
+
+  booking_type: string;  booking_type: string;
+
+interface BookingFilters {
+
+  status?: string;  pickup_time: string;  pickup_time: string;
+
+  paymentStatus?: string;
+
+  dateFrom?: string;  dropoff_time?: string;  dropoff_time?: string;
+
+  dateTo?: string;
+
+}  duration_hours?: number;  duration_hours?: number;
+
+
+
+// Fetch bookings directly from bookings table  estimated_distance?: number;  estimated_distance?: number;
+
+const fetchBookingsWithDetails = async (filters: BookingFilters = {}): Promise<BookingWithDetails[]> => {
+
+  try {  estimated_duration?: number;  estimated_duration?: number;
+
+    let query = supabase
+
+      .from('bookings')  estimated_price?: number;  estimated_price?: number;
+
+      .select(`
+
+        *,  final_price?: number;  final_price?: number;
+
+        profiles:user_id (
+
+          email,  status: string;  status: string;
+
+          first_name,
+
+          last_name  payment_status: string;  payment_status: string;
+
+        ),
+
+        vehicles:vehicle_id (  payment_method?: string;  payment_method?: string;
+
+          make,
+
+          model,  special_requests?: string;  special_requests?: string;
+
+          license_plate
+
+        )  passenger_count: number;  passenger_count: number;
+
+      `)
+
+      .order('created_at', { ascending: false });  created_at: string;  created_at: string;
+
+
+
+    // Apply filters  updated_at: string;  updated_at: string;
+
+    if (filters.status) {
+
+      query = query.eq('status', filters.status);  // Joined data  // Joined data
+
+    }
+
+    if (filters.paymentStatus) {  vehicle_name?: string;  vehicle_name?: string;
+
+      query = query.eq('payment_status', filters.paymentStatus);
+
+    }  user_email?: string;  user_email?: string;
+
+    if (filters.dateFrom) {
+
+      query = query.gte('pickup_time', filters.dateFrom);  driver_name?: string;  driver_name?: string;
+
+    }
+
+    if (filters.dateTo) {}}
+
+      query = query.lte('pickup_time', filters.dateTo);
+
+    }
+
+
+
+    const { data, error } = await query;interface BookingFilters {interface BookingFilters {
+
+
+
+    if (error) {  status?: string;  status?: string;
+
+      console.error('Database error:', error);
+
+      throw new Error(`Database error: ${error.message}`);  paymentStatus?: string;  paymentStatus?: string;
+
+    }
+
+  dateFrom?: string;  dateFrom?: string;
+
+    // Transform data to match interface
+
+    const transformedData = (data || []).map(booking => ({  dateTo?: string;  dateTo?: string;
+
+      ...booking,
+
+      user_email: booking.profiles?.email || '',}}
+
+      vehicle_name: booking.vehicles ? `${booking.vehicles.make} ${booking.vehicles.model}` : undefined,
+
+      driver_name: booking.driver_id ? 'Assigned Driver' : undefined
+
+    }));
+
+// Fetch bookings directly from bookings table// Fetch bookings directly from bookings table
+
+    return transformedData;
+
+  } catch (error) {const fetchBookingsWithDetails = async (filters: BookingFilters = {}): Promise<BookingWithDetails[]> => {const fetchBookingsWithDetails = async (filters: BookingFilters = {}): Promise<BookingWithDetails[]> => {
+
+    console.error('Error fetching bookings:', error);
+
+    throw error;  try {  try {
+
+  }
+
+};    let query = supabase    let query = supabase
+
+
+
+// Create booking      .from('bookings')      .from('bookings')
+
+const createBooking = async (bookingData: any): Promise<BookingWithDetails> => {
+
+  const { data, error } = await supabase      .select(`      .select(`
+
+    .from('bookings')
+
+    .insert([bookingData])        *,        *,
+
+    .select()
+
+    .single();        profiles:user_id (        profiles:user_id (
+
+
+
+  if (error) throw error;          email,          email,
+
+  return data;
+
+};          first_name,          first_name,
+
+
+
+// Update booking          last_name          last_name
+
+const updateBooking = async (id: string, updates: Partial<BookingWithDetails>): Promise<BookingWithDetails> => {
+
+  const { data, error } = await supabase        ),        ),
+
+    .from('bookings')
+
+    .update(updates)        vehicles:vehicle_id (        vehicles:vehicle_id (
+
+    .eq('id', id)
+
+    .select()          make,          make,
+
+    .single();
+
+          model,          model,
+
+  if (error) throw error;
+
+  return data;          license_plate          license_plate
+
+};
+
+        )        )
+
+// Delete booking
+
+const deleteBooking = async (id: string): Promise<void> => {      `)      `)
+
+  const { error } = await supabase
+
+    .from('bookings')      .order('created_at', { ascending: false });      .order('created_at', { ascending: false });
+
+    .delete()
+
+    .eq('id', id);
+
+
+
+  if (error) throw error;    // Apply filters    // Apply filters
+
+};
+
+    if (filters.status) {    if (filters.status) {
+
+// Custom hooks
+
+export function useBookings(filters: BookingFilters = {}) {      query = query.eq('status', filters.status);      query = query.eq('status', filters.status);
+
+  return useQuery({
+
+    queryKey: ['bookings', filters],    }    }
+
+    queryFn: () => fetchBookingsWithDetails(filters),
+
+    staleTime: 5 * 60 * 1000, // 5 minutes    if (filters.paymentStatus) {    if (filters.paymentStatus) {
+
+  });
+
+}      query = query.eq('payment_status', filters.paymentStatus);      query = query.eq('payment_status', filters.paymentStatus);
+
+
+
+export function useCreateBooking() {    }    }
+
+  const queryClient = useQueryClient();
+
+  const { toast } = useToast();    if (filters.dateFrom) {    if (filters.dateFrom) {
+
+
+
+  return useMutation({      query = query.gte('pickup_time', filters.dateFrom);      query = query.gte('pickup_time', filters.dateFrom);
+
+    mutationFn: createBooking,
+
+    onSuccess: () => {    }    }
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      toast({    if (filters.dateTo) {    if (filters.dateTo) {
+
+        title: "Boeking aangemaakt!",
+
+        description: "Uw boeking is succesvol aangemaakt.",      query = query.lte('pickup_time', filters.dateTo);      query = query.lte('pickup_time', filters.dateTo);
+
+      });
+
+    },    }    }
+
+    onError: (error) => {
+
+      toast({
+
+        title: "Fout bij aanmaken boeking",
+
+        description: error.message,    const { data, error } = await query;    const { data, error } = await query;
+
+        variant: "destructive",
+
+      });
+
+    },
+
+  });    if (error) {    if (error) {
+
+}
+
+      console.error('Database error:', error);      console.error('Database error:', error);
+
+export function useUpdateBooking() {
+
+  const queryClient = useQueryClient();      throw new Error(`Database error: ${error.message}`);      throw new Error(`Database error: ${error.message}`);
+
+  const { toast } = useToast();
+
+    }    }
+
+  return useMutation({
+
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<BookingWithDetails> }) =>
+
+      updateBooking(id, updates),
+
+    onSuccess: () => {    // Transform data to match interface    // Transform data to match interface
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      toast({    const transformedData = (data || []).map(booking => ({    const transformedData = (data || []).map(booking => ({
+
+        title: "Boeking bijgewerkt!",
+
+        description: "De boeking is succesvol bijgewerkt.",      ...booking,      ...booking,
+
+      });
+
+    },      user_email: booking.profiles?.email || '',      user_email: booking.profiles?.email || '',
+
+    onError: (error) => {
+
+      toast({      vehicle_name: booking.vehicles ? `${booking.vehicles.make} ${booking.vehicles.model}` : undefined,      vehicle_name: booking.vehicles ? `${booking.vehicles.make} ${booking.vehicles.model}` : undefined,
+
+        title: "Fout bij bijwerken boeking",
+
+        description: error.message,      driver_name: booking.driver_id ? 'Assigned Driver' : undefined // Could be enhanced with driver profile join      driver_name: booking.driver_id ? 'Assigned Driver' : undefined // Could be enhanced with driver profile join
+
+        variant: "destructive",
+
+      });    }));    }));
+
+    },
+
+  });
+
+}
+
+    return transformedData;    return transformedData;
+
+export function useDeleteBooking() {
+
+  const queryClient = useQueryClient();  } catch (error) {  } catch (error) {
+
+  const { toast } = useToast();
+
+    console.error('Error fetching bookings:', error);    console.error('Error fetching bookings:', error);
+
+  return useMutation({
+
+    mutationFn: deleteBooking,    throw error;    throw error;
+
+    onSuccess: () => {
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });  }  }
+
+      toast({
+
+        title: "Boeking verwijderd!",};};
+
+        description: "De boeking is succesvol verwijderd.",
+
+      });
+
+    },
+
+    onError: (error) => {// Create booking// Create booking
+
+      toast({
+
+        title: "Fout bij verwijderen boeking",const createBooking = async (bookingData: any): Promise<BookingWithDetails> => {const createBooking = async (bookingData: any): Promise<BookingWithDetails> => {
+
+        description: error.message,
+
+        variant: "destructive",  const { data, error } = await supabase  const { data, error } = await supabase
+
+      });
+
+    },    .from('bookings')    .from('bookings')
+
+  });
+
+}    .insert([bookingData])    .insert([bookingData])
+
+    .select()    .select()
+
+    .single();    .single();
+
+
+
+  if (error) throw error;  if (error) throw error;
+
+  return data;  return data;
+
+};};
+
+
+
+// Update booking// Update booking
+
+const updateBooking = async (id: string, updates: Partial<BookingWithDetails>): Promise<BookingWithDetails> => {const updateBooking = async (id: string, updates: Partial<BookingWithDetails>): Promise<BookingWithDetails> => {
+
+  const { data, error } = await supabase  const { data, error } = await supabase
+
+    .from('bookings')    .from('bookings')
+
+    .update(updates)    .update(updates)
+
+    .eq('id', id)    .eq('id', id)
+
+    .select()    .select()
+
+    .single();    .single();
+
+
+
+  if (error) throw error;  if (error) throw error;
+
+  return data;  return data;
+
+};};
+
+
+
+// Delete booking// Delete booking
+
+const deleteBooking = async (id: string): Promise<void> => {const deleteBooking = async (id: string): Promise<void> => {
+
+  const { error } = await supabase  const { error } = await supabase
+
+    .from('bookings')    .from('bookings')
+
+    .delete()    .delete()
+
+    .eq('id', id);    .eq('id', id);
+
+
+
+  if (error) throw error;  if (error) throw error;
+
+};};
+
+
+
+// Custom hooks// Custom hooks
+
+export function useBookings(filters: BookingFilters = {}) {export function useBookings(filters: BookingFilters = {}) {
+
+  return useQuery({  return useQuery({
+
+    queryKey: ['bookings', filters],    queryKey: ['bookings', filters],
+
+    queryFn: () => fetchBookingsWithDetails(filters),    queryFn: () => fetchBookingsWithDetails(filters),
+
+    staleTime: 5 * 60 * 1000, // 5 minutes    staleTime: 5 * 60 * 1000, // 5 minutes
+
+    cacheTime: 10 * 60 * 1000, // 10 minutes    cacheTime: 10 * 60 * 1000, // 10 minutes
+
+  });  });
+
+}}
+
+
+
+export function useCreateBooking() {export function useCreateBooking() {
+
+  const queryClient = useQueryClient();  const queryClient = useQueryClient();
+
+  const { toast } = useToast();  const { toast } = useToast();
+
+
+
+  return useMutation({  return useMutation({
+
+    mutationFn: createBooking,    mutationFn: createBooking,
+
+    onSuccess: () => {    onSuccess: () => {
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      toast({      toast({
+
+        title: "Boeking aangemaakt!",        title: "Boeking aangemaakt!",
+
+        description: "Uw boeking is succesvol aangemaakt.",        description: "Uw boeking is succesvol aangemaakt.",
+
+      });      });
+
+    },    },
+
+    onError: (error) => {    onError: (error) => {
+
+      toast({      toast({
+
+        title: "Fout bij aanmaken boeking",        title: "Fout bij aanmaken boeking",
+
+        description: error.message,        description: error.message,
+
+        variant: "destructive",        variant: "destructive",
+
+      });      });
+
+    },    },
+
+  });  });
+
+}}
+
+
+
+export function useUpdateBooking() {export function useUpdateBooking() {
+
+  const queryClient = useQueryClient();  const queryClient = useQueryClient();
+
+  const { toast } = useToast();  const { toast } = useToast();
+
+
+
+  return useMutation({  return useMutation({
+
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<BookingWithDetails> }) =>    mutationFn: ({ id, updates }: { id: string; updates: Partial<BookingWithDetails> }) =>
+
+      updateBooking(id, updates),      updateBooking(id, updates),
+
+    onSuccess: () => {    onSuccess: () => {
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      toast({      toast({
+
+        title: "Boeking bijgewerkt!",        title: "Boeking bijgewerkt!",
+
+        description: "De boeking is succesvol bijgewerkt.",        description: "De boeking is succesvol bijgewerkt.",
+
+      });      });
+
+    },    },
+
+    onError: (error) => {    onError: (error) => {
+
+      toast({      toast({
+
+        title: "Fout bij bijwerken boeking",        title: "Fout bij bijwerken boeking",
+
+        description: error.message,        description: error.message,
+
+        variant: "destructive",        variant: "destructive",
+
+      });      });
+
+    },    },
+
+  });  });
+
+}}
+
+
+
+export function useDeleteBooking() {export function useDeleteBooking() {
+
+  const queryClient = useQueryClient();  const queryClient = useQueryClient();
+
+  const { toast } = useToast();  const { toast } = useToast();
+
+
+
+  return useMutation({  return useMutation({
+
+    mutationFn: deleteBooking,    mutationFn: deleteBooking,
+
+    onSuccess: () => {    onSuccess: () => {
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      toast({      toast({
+
+        title: "Boeking verwijderd!",        title: "Boeking verwijderd!",
+
+        description: "De boeking is succesvol verwijderd.",        description: "De boeking is succesvol verwijderd.",
+
+      });      });
+
+    },    },
+
+    onError: (error) => {    onError: (error) => {
+
+      toast({      toast({
+
+        title: "Fout bij verwijderen boeking",        title: "Fout bij verwijderen boeking",
+
+        description: error.message,        description: error.message,
+
+        variant: "destructive",        variant: "destructive",
+
+      });      });
+
+    },    },
+
+  });  });
+
+}}
+    throw error;
+  }
+};
+      throw new Error(`Database error: ${error.message}`);
+    }
+
+    let bookings = data || [];
+
+    // Apply client-side filters if needed
+    if (filters.status && filters.status !== 'all') {
+      bookings = bookings.filter((booking: BookingWithDetails) => booking.status === filters.status);
+    }
+
+    if (filters.paymentStatus && filters.paymentStatus !== 'all') {
+      bookings = bookings.filter((booking: BookingWithDetails) => booking.payment_status === filters.paymentStatus);
+    }
+
+    if (filters.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      bookings = bookings.filter((booking: BookingWithDetails) => 
+        new Date(booking.created_at) >= fromDate
+      );
+    }
+
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999); // End of day
+      bookings = bookings.filter((booking: BookingWithDetails) => 
+        new Date(booking.created_at) <= toDate
+      );
+    }
+
+    return bookings;
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    throw error;
+  }
+};
+
+// Single booking fetcher
+const fetchBookingById = async (id: string): Promise<BookingWithDetails> => {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(`
+      *,
+      vehicles(name),
+      profiles(email),
+      companies(name)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Update booking status
+const updateBookingStatus = async ({ 
+  bookingId, 
+  status, 
+  paymentStatus 
+}: { 
+  bookingId: string; 
+  status?: string; 
+  paymentStatus?: string; 
+}): Promise<BookingWithDetails> => {
+  const updates: any = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (status) updates.status = status;
+  if (paymentStatus) updates.payment_status = paymentStatus;
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .update(updates)
+    .eq('id', bookingId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Custom hooks
+export function useBookings(filters: BookingFilters = {}) {
+  return useQuery({
+    queryKey: ['bookings', filters],
+    queryFn: () => fetchBookingsWithDetails(filters),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    cacheTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
+  });
+}
+
+export function useBooking(id: string) {
+  return useQuery({
+    queryKey: ['booking', id],
+    queryFn: () => fetchBookingById(id),
+    staleTime: 1 * 60 * 1000, // 1 minute
+    enabled: !!id,
+  });
+}
+
+export function useUpdateBookingStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: updateBookingStatus,
+    onSuccess: (updatedBooking) => {
+      // Update the bookings list cache
+      queryClient.setQueryData(['bookings'], (oldData: BookingWithDetails[] = []) => {
+        return oldData.map(booking => 
+          booking.id === updatedBooking.id ? updatedBooking : booking
+        );
+      });
+
+      // Update the single booking cache
+      queryClient.setQueryData(['booking', updatedBooking.id], updatedBooking);
+
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      toast({
+        title: "Status bijgewerkt",
+        description: "De boekingstatus is succesvol bijgewerkt.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating booking status:', error);
+      toast({
+        title: "Fout bij bijwerken",
+        description: "Kon de boekingstatus niet bijwerken. Probeer het opnieuw.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// Prefetch function for better UX
+export function usePrefetchBooking() {
+  const queryClient = useQueryClient();
+
+  const prefetchBooking = (id: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['booking', id],
+      queryFn: () => fetchBookingById(id),
+      staleTime: 1 * 60 * 1000,
+    });
+  };
+
+  return prefetchBooking;
+}
+
+// Background refresh
+export function useBookingsBackgroundRefresh() {
+  const queryClient = useQueryClient();
+
+  const refreshBookings = () => {
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+  };
+
+  return refreshBookings;
+}

@@ -30,7 +30,7 @@ export default function HourlyBooking() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
         <div className="max-w-2xl mx-auto py-8">
-          <Card className="border-green-200 bg-green-50">
+          <Card className="border-green-200 bg-green-50 luxury-rounded">
             <CardHeader className="text-center">
               <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -42,7 +42,7 @@ export default function HourlyBooking() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <div className="bg-white rounded-lg p-4 space-y-4">
+              <div className="bg-white rounded-lg p-4 space-y-4 luxury-solid-bg">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary" />
                   Boekingsdetails
@@ -101,7 +101,7 @@ export default function HourlyBooking() {
 
               {/* Contact information */}
               {(bookingConfirmed.guestName || bookingConfirmed.guestEmail || bookingConfirmed.guestPhone) && (
-                <div className="bg-white rounded-lg p-4 space-y-3">
+                <div className="bg-white rounded-lg p-4 space-y-3 luxury-solid-bg">
                   <h3 className="font-semibold flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" />
                     Contactgegevens
@@ -205,8 +205,8 @@ export default function HourlyBooking() {
           </Card>
         </div>
 
-        {/* Booking Form */}
-        <Card className="w-full max-w-lg mx-auto bg-card/95 backdrop-blur-sm border-border/50 shadow-2xl">
+  {/* Booking Form */}
+  <Card className="w-full max-w-lg mx-auto bg-card/95 border-border/50 shadow-2xl luxury-solid-bg luxury-rounded">
           <CardContent className="p-6">
             <SimpleHourlyBookingForm
               onBookingSuccess={handleBookingSuccess}

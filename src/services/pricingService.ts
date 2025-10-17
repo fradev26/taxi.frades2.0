@@ -5,8 +5,9 @@
  * time-based surcharges, and final price computation.
  */
 
-import { PRICING_CONFIG, getVehiclePricing, isSurchargeApplicable, roundPrice } from '@/config/pricing';
+import { PRICING_CONFIG, getVehiclePricing, roundPrice } from '@/config/pricing';
 import type { DistanceResult } from './distanceService';
+import type { VehiclePricing as ConfigVehiclePricing, SurchargeRule } from '@/config/pricing';
 
 export interface PriceCalculationParams {
   vehicleType: string;
@@ -17,6 +18,9 @@ export interface PriceCalculationParams {
   destinationLocation?: string; // Destination location
   hasStopover?: boolean;    // Whether there are stops
   isReturn?: boolean;       // Round trip booking
+  // Optional overrides to force admin pricing values
+  overrideVehiclePricing?: Partial<ConfigVehiclePricing>;
+  overrideSurcharges?: Record<string, SurchargeRule>;
 }
 
 export interface PriceBreakdown {
@@ -42,7 +46,14 @@ export class PricingService {
    * Calculate complete price breakdown for a ride
    */
   static calculatePrice(params: PriceCalculationParams): PriceBreakdown {
-    const vehiclePricing = getVehiclePricing(params.vehicleType);
+    // Allow admin-provided vehicle pricing overrides (base, perKm, perMinute, minimum)
+    const defaultVehiclePricing = getVehiclePricing(params.vehicleType);
+    const vehiclePricing: ConfigVehiclePricing = {
+      base: params.overrideVehiclePricing?.base ?? defaultVehiclePricing.base,
+      perKm: params.overrideVehiclePricing?.perKm ?? defaultVehiclePricing.perKm,
+      perMinute: params.overrideVehiclePricing?.perMinute ?? defaultVehiclePricing.perMinute,
+      minimum: params.overrideVehiclePricing?.minimum ?? defaultVehiclePricing.minimum,
+    } as ConfigVehiclePricing;
     const pickupTime = params.pickupTime || new Date();
     
     // Base calculations
@@ -51,7 +62,7 @@ export class PricingService {
     const timePrice = this.calculateTimePrice(params.duration || 0, vehiclePricing.perMinute);
     
     // Calculate surcharges
-    const surcharges = this.calculateSurcharges(params, pickupTime);
+  const surcharges = this.calculateSurcharges(params, pickupTime, params.overrideSurcharges);
     const surchargeTotal = surcharges.reduce((sum, s) => sum + s.amount, 0);
     
     // Subtotal before tax
@@ -96,7 +107,9 @@ export class PricingService {
     distanceResult: DistanceResult,
     pickupTime?: Date,
     pickupLocation?: string,
-    hasStopover?: boolean
+    hasStopover?: boolean,
+    overrideVehiclePricing?: Partial<ConfigVehiclePricing>,
+    overrideSurcharges?: Record<string, SurchargeRule>
   ): PriceBreakdown {
     return this.calculatePrice({
       vehicleType,
@@ -105,6 +118,8 @@ export class PricingService {
       pickupTime,
       pickupLocation,
       hasStopover,
+      overrideVehiclePricing,
+      overrideSurcharges
     });
   }
 
@@ -130,25 +145,79 @@ export class PricingService {
    */
   private static calculateSurcharges(
     params: PriceCalculationParams,
-    pickupTime: Date
+    pickupTime: Date,
+    overrideSurcharges?: Record<string, SurchargeRule>
   ): Array<{name: string, description: string, amount: number, type: 'absolute' | 'percentage'}> {
     const surcharges: Array<{name: string, description: string, amount: number, type: 'absolute' | 'percentage'}> = [];
-    const baseAmount = getVehiclePricing(params.vehicleType).base + 
-                      this.calculateDistancePrice(params.distance || 0, getVehiclePricing(params.vehicleType).perKm);
-    
-    // Check each surcharge type
-    Object.entries(PRICING_CONFIG.surcharges).forEach(([key, surcharge]) => {
+
+    // Use overrides when provided, otherwise fall back to config
+    const surchargesSource = overrideSurcharges ?? PRICING_CONFIG.surcharges;
+
+    const vehiclePricingForBase = params.overrideVehiclePricing ? {
+      base: params.overrideVehiclePricing.base ?? getVehiclePricing(params.vehicleType).base,
+      perKm: params.overrideVehiclePricing.perKm ?? getVehiclePricing(params.vehicleType).perKm,
+    } : getVehiclePricing(params.vehicleType);
+
+    const baseAmount = vehiclePricingForBase.base + this.calculateDistancePrice(params.distance || 0, vehiclePricingForBase.perKm);
+
+    // Iterate through provided surcharges and determine applicability based on their fields
+    Object.entries(surchargesSource).forEach(([key, surcharge]) => {
       const isAirportPickup = params.pickupLocation ? 
         params.pickupLocation.toLowerCase().includes('airport') || 
         params.pickupLocation.toLowerCase().includes('luchthaven') : false;
-        
-      const isApplicable = isSurchargeApplicable(
-        key, 
-        pickupTime, 
-        isAirportPickup, 
-        params.distance || 0
-      );
-      
+
+      let isApplicable = false;
+
+      const hour = pickupTime.getHours();
+      const day = pickupTime.getDay();
+
+      // Evaluate applicability using the surcharge rule fields
+      if (surcharge.hours && surcharge.hours.length === 2) {
+        // nightTime style [start, end] where end may be smaller than start
+        const [start, end] = surcharge.hours;
+        if (start <= end) {
+          isApplicable = hour >= start && hour < end;
+        } else {
+          // e.g., 22 -> 6
+          isApplicable = hour >= start || hour < end;
+        }
+      }
+
+      if (!isApplicable && surcharge.timeRanges && surcharge.timeRanges.length > 0) {
+        isApplicable = surcharge.timeRanges.some(([start, end]) => hour >= start && hour < end);
+      }
+
+      if (!isApplicable && surcharge.days && surcharge.days.length > 0) {
+        isApplicable = surcharge.days.includes(day);
+      }
+
+      // Specific named checks
+      if (!isApplicable && key === 'holiday') {
+        // reuse existing simple holiday logic from config
+        const month = pickupTime.getMonth() + 1;
+        const date = pickupTime.getDate();
+        const holidays = [
+          [1,1],[4,27],[5,5],[12,25],[12,26]
+        ];
+        isApplicable = holidays.some(([m,d]) => m === month && d === date);
+      }
+
+      if (!isApplicable && key === 'airportPickup') {
+        isApplicable = !!isAirportPickup;
+      }
+
+      if (!isApplicable && key === 'shortDistance') {
+        isApplicable = params.distance !== undefined && params.distance > 0 && params.distance < 3;
+      }
+
+      if (!isApplicable && key === 'rushHour') {
+        if (surcharge.timeRanges && surcharge.days) {
+          const isWeekday = surcharge.days.includes(day);
+          const inRange = surcharge.timeRanges.some(([start, end]) => hour >= start && hour < end);
+          isApplicable = isWeekday && inRange;
+        }
+      }
+
       if (isApplicable) {
         const amount = this.calculateSurchargeAmount(baseAmount, surcharge.factor, key);
         if (amount > 0) {
@@ -161,7 +230,7 @@ export class PricingService {
         }
       }
     });
-    
+
     return surcharges;
   }
 

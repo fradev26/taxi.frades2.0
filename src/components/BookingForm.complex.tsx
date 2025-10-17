@@ -526,7 +526,7 @@ export const BookingForm = React.memo(function BookingForm() {
               
               {/* Location Suggestions */}
               {showLocationSuggestions && (
-                <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-xl border-2 border-primary/20 max-h-80 overflow-y-auto bg-background/95 backdrop-blur-sm">
+                <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-xl border-2 border-primary/20 max-h-80 overflow-y-auto bg-background/95 luxury-solid-bg">
                   <CardContent className="p-2">
                     {/* Current Location */}
                     <Button

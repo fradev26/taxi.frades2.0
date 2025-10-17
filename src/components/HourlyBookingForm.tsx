@@ -485,11 +485,11 @@ export const HourlyBookingForm = memo(function HourlyBookingForm({
                   />
                 </div>
                 
-                <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="flex justify-between items-center text-sm text-muted-foreground">
                   <span>1 uur</span>
-                  <span className="font-semibold text-lg text-primary">
+                  <Badge variant="secondary" className="px-4 py-1 text-lg font-semibold">
                     {bookingData.duration} {bookingData.duration === 1 ? 'uur' : 'uren'}
-                  </span>
+                  </Badge>
                   <span>24 uren</span>
                 </div>
 

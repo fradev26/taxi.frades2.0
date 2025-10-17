@@ -135,7 +135,8 @@ export function AccountDropdown() {
       {isOpen && (
         <Card className={cn(
           "absolute right-0 top-14 w-auto shadow-xl border-2 border-gray-200 z-50 bg-white rounded-xl",
-          "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
+          "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200",
+          "luxury-solid-bg luxury-rounded"
         )}
         style={{ backgroundColor: 'white', opacity: 1 }}>
           <CardContent className="p-0">

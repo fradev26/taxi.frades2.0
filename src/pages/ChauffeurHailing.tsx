@@ -112,23 +112,7 @@ export default function ChauffeurHailing() {
         {/* Timeline Section */}
         {/* Timeline Section verwijderd */}
 
-        {/* Notification Signup */}
-        <section id="notify" className="text-center bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-12">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-              Maak een account en ontvang updates
-          </h2>
-          <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-              Word lid van Frades en krijg direct €10 tegoed voor je eerste rit zodra chauffeur hailing live gaat. Ontvang als eerste updates en exclusieve voordelen.
-          </p>
-            <Button size="lg" className="bg-black text-white px-8 py-4 font-semibold" asChild>
-              <Link to="/account/register" className="hover:bg-gray-900 hover:text-white transition-colors">Maak een account</Link>
-            </Button>
-          <div className="mt-6">
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/" className="hover:bg-black hover:text-white transition-colors">Ontdek andere services</Link>
-            </Button>
-          </div>
-        </section>
+        {/* Notification Signup removed per request */}
       </div>
       <Footer />
     </div>

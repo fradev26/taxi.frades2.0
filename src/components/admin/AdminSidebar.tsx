@@ -1,15 +1,22 @@
 import { useState } from "react";
-import { CalendarCheck, Euro, Car, Users, BarChart2, Settings, Mail } from "lucide-react";
+import { CalendarCheck, Euro, Car, Users, BarChart2, Settings, Mail, TestTube } from "lucide-react";
 import clsx from "clsx";
 import { HamburgerIcon } from "./HamburgerIcon";
+
+
+// Optie om beheer-tabbladen te tonen
+const showFleetAndDrivers = false; // Zet op true om weer te tonen (later via instellingen)
 
 const menuItems = [
   { key: "bookings", icon: <CalendarCheck />, label: "Boekingen" },
   { key: "pricing", icon: <Euro />, label: "Prijzen" },
-  { key: "fleet", icon: <Car />, label: "Voertuigen" },
-  { key: "drivers", icon: <Users />, label: "Chauffeurs" },
-  { key: "users", icon: <Mail />, label: "Gebruikers" },
+  ...(showFleetAndDrivers ? [
+    { key: "fleet", icon: <Car />, label: "Voertuigen" },
+    { key: "drivers", icon: <Users />, label: "Chauffeurs" },
+  ] : []),
+  // { key: "users", icon: <Mail />, label: "Gebruikers" },
   { key: "stats", icon: <BarChart2 />, label: "Statistieken" },
+  { key: "process-tests", icon: <TestTube />, label: "Procestests" },
   { key: "settings", icon: <Settings />, label: "Instellingen" },
 ];
 

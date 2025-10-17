@@ -14,7 +14,7 @@ export function UserManager() {
   const loadUsers = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('users').select('*');
+  const { data, error } = await supabase.from('profiles').select('*');
       if (error) {
         setUsers([]);
         toast({
@@ -89,7 +89,11 @@ export function UserManager() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.display_name || <span className="text-muted-foreground italic">Geen naam</span>}</TableCell>
+                  <TableCell>
+                    {user.first_name && user.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : user.email || <span className="text-muted-foreground italic">Geen naam</span>}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-muted-foreground" />

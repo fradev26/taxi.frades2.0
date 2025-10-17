@@ -17,6 +17,14 @@ supabase functions deploy payment-methods
 
 echo "📦 Deploying process-booking-payment..."
 supabase functions deploy process-booking-payment
+echo "📦 Deploying create-guest-booking..."
+supabase functions deploy create-guest-booking
+
+echo "📦 Deploying create-booking-with-lock..."
+supabase functions deploy create-booking-with-lock
+
+echo "📦 Deploying claim-guest-booking..."
+supabase functions deploy claim-guest-booking
 
 echo "📦 Deploying stripe-webhook..."
 supabase functions deploy stripe-webhook

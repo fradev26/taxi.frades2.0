@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { AccountDropdown } from "@/components/AccountDropdown";
-import { Car, Wallet, Clock, User, Settings, Menu, X, UserCircle } from "lucide-react";
+import { Car, Wallet, Clock, Settings, Menu, X, UserCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "@/lib/supabase";
@@ -14,6 +14,8 @@ export const Navigation = memo(function Navigation() {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Close mobile menu when clicking outside or on route change
   useEffect(() => {
@@ -33,6 +35,26 @@ export const Navigation = memo(function Navigation() {
       document.body.style.overflow = 'unset';
     };
   }, [isMobileMenuOpen]);
+
+  // Handle header visibility on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < lastScrollY) {
+        // Scrolling up
+        setIsHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down and past threshold
+        setIsHeaderVisible(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleLogout = async () => {
     try {
@@ -65,7 +87,7 @@ export const Navigation = memo(function Navigation() {
       ? [{ label: "Boeken", path: ROUTES.HOME, icon: Car }]
       : [
           { label: "Boeken", path: ROUTES.HOME, icon: Car },
-          { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
+          { label: "Inloggen", path: ROUTES.LOGIN, icon: UserCircle },
         ],
     [user]
   );
@@ -79,7 +101,7 @@ export const Navigation = memo(function Navigation() {
           { label: "Activiteit", path: ROUTES.TRIPS, icon: Clock }
         ]
       : [
-          { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
+          { label: "Inloggen", path: ROUTES.LOGIN, icon: UserCircle },
         ],
     [user]
   );
@@ -95,7 +117,7 @@ export const Navigation = memo(function Navigation() {
         ]
       : [
           { label: "Boeken", path: ROUTES.HOME, icon: Car },
-          { label: "Inloggen", path: ROUTES.LOGIN, icon: User },
+          { label: "Inloggen", path: ROUTES.LOGIN, icon: UserCircle },
         ],
     [user]
   );
@@ -121,70 +143,67 @@ export const Navigation = memo(function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center justify-between w-full px-6 py-4 bg-card border-b border-gray-100">
-        {/* Left spacer for centering */}
-        <div className="flex-1"></div>
-        
-        {/* Centered Logo */}
-        <button
-          onClick={() => navigate(ROUTES.HOME)}
-          className="hover:opacity-80 transition-opacity"
-        >
-          <span className="text-xl font-bold text-primary">
-            {APP_CONFIG.name}
-          </span>
-        </button>
+      <nav className={`hidden md:flex w-full bg-card border-b border-gray-100 transition-transform duration-300 sticky top-0 z-50 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="w-full relative h-12">
+          {/* Logo: pinned to the absolute left of the viewport */}
+          <div className="absolute left-4 top-0 flex items-center h-12">
+            <button onClick={() => navigate(ROUTES.HOME)} className="hover:opacity-80 transition-opacity">
+              <span className="text-sm font-bold text-primary">
+                {APP_CONFIG.name}
+              </span>
+            </button>
+          </div>
 
-        {/* Right side navigation */}
-        <div className="flex items-center space-x-1 flex-1 justify-end">
-          {headerNavigationItems.map((item) => (
-            <Button
-              key={item.path}
-              variant={isActive(item.path) ? "default" : "ghost"}
-              size="sm"
-              onClick={() => navigate(item.path)}
-              className={`gap-2 rounded-xl border-2 transition-colors ${
-                isActive(item.path) 
-                  ? "bg-black text-white border-black hover:bg-gray-800" 
-                  : "bg-transparent text-black border-transparent hover:bg-gray-100 hover:border-gray-200"
-              }`}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Button>
-          ))}
-          {user && <AccountDropdown />}
+          {/* Right side navigation: pinned to the absolute right */}
+          <div className="absolute right-4 top-0 flex items-center h-12 space-x-1">
+            {headerNavigationItems.map((item) => (
+              <Button
+                key={item.path}
+                variant={isActive(item.path) ? "default" : "ghost"}
+                size="sm"
+                onClick={() => navigate(item.path)}
+                className={`gap-2 rounded-xl border-2 transition-colors ${
+                  isActive(item.path)
+                    ? "bg-black text-white border-black hover:bg-gray-800"
+                    : "bg-transparent text-black border-transparent hover:bg-gray-100 hover:border-gray-200"
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </Button>
+            ))}
+            {user && <AccountDropdown />}
+          </div>
         </div>
       </nav>
 
       {/* Mobile Navigation */}
       <nav className="md:hidden">
         {/* Mobile Header */}
-        <div className="flex items-center justify-between w-full px-4 py-3 bg-card border-b border-gray-100">
-          {/* Hamburger Menu Button */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
-            </Button>
-          )}
-          
-          <button
-            onClick={() => navigate(ROUTES.HOME)}
-            className="hover:opacity-80 transition-opacity"
-          >
-            <span className="text-lg font-bold text-primary">
-              {APP_CONFIG.name}
-            </span>
-          </button>
+        <div className={`flex items-center justify-center w-full bg-card border-b border-gray-100 transition-transform duration-300 sticky top-0 z-50 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+          <div className="w-full max-w-7xl mx-auto flex items-center justify-between px-4 h-12">
+            {/* Hamburger Menu Button */}
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 h-10 flex items-center justify-center"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </Button>
+            )}
+            
+            <button onClick={() => navigate(ROUTES.HOME)} className="hover:opacity-80 transition-opacity flex items-center h-full">
+              <span className="text-sm font-bold text-primary flex items-center h-full">
+                {APP_CONFIG.name}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Side Menu Backdrop */}
@@ -202,7 +221,7 @@ export const Navigation = memo(function Navigation() {
         `}>
           {/* Menu Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <span className="text-xl font-bold text-primary">
+            <span className="text-lg font-bold text-primary">
               {APP_CONFIG.name}
             </span>
             <Button
@@ -278,8 +297,8 @@ export const Navigation = memo(function Navigation() {
                   className="w-full justify-start gap-4 px-6 py-4 h-auto rounded-xl border-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
                 >
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-red-600" />
-                  </div>
+                      <UserCircle className="w-5 h-5 text-red-600" />
+                    </div>
                   <span className="text-base font-medium">Uitloggen</span>
                 </Button>
               </div>
@@ -297,14 +316,14 @@ export const Navigation = memo(function Navigation() {
 
       {/* Bottom Navigation (Mobile) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-1">
           {mobileNavigationItems.map((item) => (
             <Button
               key={item.path}
               variant={isActive(item.path) ? "taxi-primary" : "taxi-ghost"}
               size="sm"
               onClick={() => navigate(item.path)}
-              className="flex-col gap-1 h-16"
+              className="flex-col gap-1 h-12"
             >
               <item.icon className="w-5 h-5" />
               <span className="text-xs">{item.label}</span>
